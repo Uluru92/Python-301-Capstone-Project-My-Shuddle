@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyShuddle Tracker</title>
+</head>
+<body>
+  <h1>MyShuddle Tracker</h1>
+  <button id="startBtn">Start Tracking</button>
+
+  <script>
+    const backendUrl = "https://b7d2e50881c2.ngrok-free.app/location"; //URL de ngrok
+
+    document.getElementById("startBtn").addEventListener("click", () => {
+      if (!navigator.geolocation) {
+        alert("Geolocation is not supported by this browser.");
+        return;
+      }
+
+      alert("Tracking started! ✅");
+
+      // Enviar ubicación cada 30 segundos
+      setInterval(async () => {
+        navigator.geolocation.getCurrentPosition(async (position) => {
+          const locationData = {
+            bus_id: "bus123", // podés reemplazar con el ID real del bus
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+            timestamp: new Date().toISOString()
+          };
+
+          try {
+            const response = await fetch(backendUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(locationData)
+            });
+
+            const result = await response.json();
+            console.log("Server response:", result);
+          } catch (error) {
+            console.error("Error sending location:", error);
+          }
+        });
+      }, 30000); // 30 segundos
+    });
+  </script>
+</body>
+</html>
