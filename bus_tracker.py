@@ -12,12 +12,12 @@ CORS(app)  # habilita CORS para que el navegador pueda enviar POST
 coords_list = []  # Lista de dicts: {'bus_id', 'lat', 'lng', 'timestamp'}
 
 # URL pública de ngrok fija
-PUBLIC_URL = "https://342133ff183c.ngrok-free.app"
+PUBLIC_URL = "https://8e37d919c96a.ngrok-free.app"
 print("🌍 Usando URL pública:", PUBLIC_URL)
 
-@app.route("/", methods=["GET"])
+@app.route("/")
 def home():
-    return "Servidor MyShuddle corriendo 🚍"
+    return open("index.html").read()
 
 @app.route("/location", methods=["POST"])
 def location():
