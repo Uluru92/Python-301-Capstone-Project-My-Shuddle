@@ -11,6 +11,8 @@ app = Flask(__name__)
 CORS(app)  # habilita CORS para que el navegador pueda enviar POST
 coords_list = []  # Lista de dicts: {'bus_id', 'lat', 'lng', 'timestamp'}
 
+
+
 # URL pública de ngrok fija
 PUBLIC_URL = "https://8e37d919c96a.ngrok-free.app"
 print("🌍 Usando URL pública:", PUBLIC_URL)
@@ -27,8 +29,31 @@ def location():
         return jsonify({"status": "error", "message": "Faltan datos"}), 400
 
     coords_list.append(data)
-    print("Received:", data)
+    print(f"Latitude: {data['lat']} Longitude: {data['lng']}")
     return jsonify({"status": "ok"}), 200
+
+@app.route("/map")
+def show_map():
+    if coords_list:
+        center = (coords_list[-1]['lat'], coords_list[-1]['lng'])
+    else:
+        center = (10.05, -85.42)  # Hojancha (default)
+
+    m = folium.Map(location=center, zoom_start=15)
+
+    # Dibujar ruta
+    if len(coords_list) > 1:
+        path = [(c['lat'], c['lng']) for c in coords_list]
+        folium.PolyLine(path, color="blue", weight=5).add_to(m)
+
+    # Agregar marcadores
+    for c in coords_list:
+        folium.Marker(
+            location=(c['lat'], c['lng']),
+            popup=f"Bus: {c['bus_id']}<br>{c['timestamp']}"
+        ).add_to(m)
+
+    return m._repr_html_()
 
 def run_flask():
     app.run(host="0.0.0.0", port=5000, use_reloader=False)

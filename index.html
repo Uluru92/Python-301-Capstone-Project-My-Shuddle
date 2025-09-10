@@ -18,31 +18,39 @@
         return;
       }
 
-      alert("Tracking started! ✅");
+      // Pedir ubicación inmediatamente desde el click (evento seguro)
+      navigator.geolocation.getCurrentPosition(position => {
+        alert("Tracking started! ✅");
 
-      setInterval(async () => {
-        navigator.geolocation.getCurrentPosition(async (position) => {
+        // Función para enviar datos al backend
+        const sendLocation = (pos) => {
           const locationData = {
             bus_id: "bus123",
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
             timestamp: new Date().toISOString()
           };
+          fetch(backendUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(locationData)
+          })
+          .then(res => res.json())
+          .then(r => console.log("Server response:", r))
+          .catch(err => console.error("Error sending location:", err));
+        };
 
-          try {
-            const response = await fetch(backendUrl, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(locationData)
-            });
+        // Enviar la primera ubicación inmediatamente
+        sendLocation(position);
 
-            const result = await response.json();
-            console.log("Server response:", result);
-          } catch (error) {
-            console.error("Error sending location:", error);
-          }
-        });
-      }, 30000);
+        // Luego iniciar intervalo cada 30s para enviar nuevas ubicaciones
+        setInterval(() => {
+          navigator.geolocation.getCurrentPosition(sendLocation);
+        }, 30000);
+
+      }, error => {
+        alert("No se pudo obtener la ubicación: " + error.message);
+      });
     });
   </script>
 </body>
