@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 # Admin user Tkinter
 admin_email = "admin@gmail.com"
-admin_password = "admin123" 
+admin_password = "admin123"
 
 # Get passwords and secret stuff from .env
 load_dotenv()
@@ -26,6 +26,19 @@ def connect_db():
         database=MYSQL_DB_MYSHUDDLE
     )
 
+# Admin dashboard window
+def open_admin_dashboard():
+    dashboard = Toplevel(root)
+    dashboard.title("Admin Dashboard - MyShuddle")
+    dashboard.geometry("400x300")
+
+    Label(dashboard, text="MyShuddle Admin Panel", font=("Arial", 14, "bold")).pack(pady=10)
+    Button(dashboard, text="Register Parent", width=20, command=register_parent).pack(pady=5)
+    Button(dashboard, text="Register Student", width=20, command=register_student).pack(pady=5)
+    Button(dashboard, text="Register Bus", width=20, command=register_bus).pack(pady=5)
+    Button(dashboard, text="View Trips", width=20, command=view_trips).pack(pady=5)
+    Button(dashboard, text="Logout", width=20, command=dashboard.destroy).pack(pady=20)
+
 # Login function
 def login():
     email = entry_user.get()
@@ -33,9 +46,41 @@ def login():
 
     if email == admin_email and password == admin_password:
         messagebox.showinfo("Login Success", f"Welcome, {email}!")
-        # 👉 Here you can open the admin dashboard window
+        open_admin_dashboard()
     else:
         messagebox.showerror("Login Failed", "Invalid admin credentials.")
+
+# Register Parent
+def register_parent():
+    parent_window  = Toplevel(root)
+    parent_window .title("Parent Registration")
+    parent_window .geometry("400x300")
+
+    Button(parent_window, text="Logout", width=20, command=parent_window.destroy).pack(pady=20)
+    pass
+
+# Register Student
+def register_student():
+    student_window  = Toplevel(root)
+    student_window .title("Student Registration")
+    student_window .geometry("400x300")
+
+    Button(student_window, text="Logout", width=20, command=student_window.destroy).pack(pady=20)
+    pass
+
+# Register Bus
+def register_bus():
+    bus_window  = Toplevel(root)
+    bus_window .title("Bus Registration")
+    bus_window .geometry("400x300")
+
+    Button(bus_window, text="Logout", width=20, command=bus_window.destroy).pack(pady=20)
+    pass
+
+# View trips
+def view_trips():
+
+    pass
 
 # Create window tkinter
 root = Tk()
