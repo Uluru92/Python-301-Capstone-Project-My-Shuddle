@@ -10,6 +10,7 @@ MYSQL_HOST = os.getenv("MYSQL_HOST")
 MYSQL_PORT = os.getenv("MYSQL_PORT")
 MYSQL_DB_MYSHUDDLE = os.getenv("MYSQL_DB_MYSHUDDLE")
 
+
 # Database connection
 def connect_db():
     return mysql.connector.connect(
@@ -91,4 +92,3 @@ conn.commit()
 conn.close()
 print("✅ Connected to MyShuddle database successfully!")
 print("✅ All tables created successfully!")
-

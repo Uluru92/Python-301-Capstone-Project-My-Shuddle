@@ -5,6 +5,10 @@ from tkinter import messagebox
 import os
 from dotenv import load_dotenv
 
+# Admin user Tkinter
+admin_email = "admin@gmail.com"
+admin_password = "admin123" 
+
 # Get passwords and secret stuff from .env
 load_dotenv()
 MYSQL_USER = os.getenv("MYSQL_USER")
@@ -27,19 +31,11 @@ def login():
     email = entry_user.get()
     password = entry_pass.get()
 
-    conn = connect_db()
-    cursor = conn.cursor()
-
-    # Check if user exists
-    cursor.execute("SELECT * FROM parents WHERE email=%s AND password=%s", (email, password))
-    result = cursor.fetchone()
-
-    if result:
-        messagebox.showinfo("Login Success", f"Welcome {email}!")
+    if email == admin_email and password == admin_password:
+        messagebox.showinfo("Login Success", f"Welcome, {email}!")
+        # 👉 Here you can open the admin dashboard window
     else:
-        messagebox.showerror("Login Failed", "Invalid email or password.")
-
-    conn.close()
+        messagebox.showerror("Login Failed", "Invalid admin credentials.")
 
 # Create window tkinter
 root = Tk()
