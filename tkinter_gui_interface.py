@@ -52,18 +52,87 @@ def login():
 
 # Register Parent
 def register_parent():
-    parent_window  = Toplevel(root)
-    parent_window .title("Parent Registration")
-    parent_window .geometry("400x300")
+    parent_window = Toplevel(root)
+    parent_window.title("Parent Registration")
+    parent_window.geometry("400x300")
 
-    Button(parent_window, text="Logout", width=20, command=parent_window.destroy).pack(pady=20)
-    pass
+    # Inputs for parent registration:
+    ttk.Label(parent_window, text="Email:").grid(column=0, row=0, sticky=W)
+    entry_email = ttk.Entry(parent_window, width=25)
+    entry_email.grid(column=1, row=0)
+
+    ttk.Label(parent_window, text="Password:").grid(column=0, row=1, sticky=W)
+    entry_password = ttk.Entry(parent_window, width=25, show="*")
+    entry_password.grid(column=1, row=1)
+
+    ttk.Label(parent_window, text="Name:").grid(column=0, row=2, sticky=W)
+    entry_name = ttk.Entry(parent_window, width=25)
+    entry_name.grid(column=1, row=2)
+
+    ttk.Label(parent_window, text="Last Name:").grid(column=0, row=3, sticky=W)
+    entry_last_name = ttk.Entry(parent_window, width=25)
+    entry_last_name.grid(column=1, row=3)
+
+    ttk.Label(parent_window, text="Phone:").grid(column=0, row=4, sticky=W)
+    entry_phone = ttk.Entry(parent_window, width=25)
+    entry_phone.grid(column=1, row=4)
+
+    def save_parent_info():
+        # Clean information
+        email = entry_email.get().strip()
+        password = entry_password.get().strip()
+        name = entry_name.get().strip()
+        last_name = entry_last_name.get().strip()
+        phone = entry_phone.get().strip()
+
+        if not email or not password or not name or not last_name or not phone:
+            messagebox.showerror("Error", "All fields are required.")
+            return
+
+        conn = connect_db()
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("""
+                INSERT INTO parents (email, password, name, last_name, phone)
+                VALUES (%s, %s, %s, %s, %s)
+                """, (email, password, name, last_name, phone))
+
+            conn.commit()
+            messagebox.showinfo("Success", f"Parent {name} registered successfully!")
+
+            # Clear fields after success
+            entry_email.delete(0, END)
+            entry_password.delete(0, END)
+            entry_name.delete(0, END)
+            entry_last_name.delete(0, END)
+            entry_phone.delete(0, END)
+
+        except mysql.connector.IntegrityError:
+            messagebox.showerror("Error", f"Email {email} already exists.")
+        except mysql.connector.Error as err:
+            messagebox.showerror("Database Error", str(err))
+        finally:
+            conn.close()
+
+    # Call to registration:
+    ttk.Button(parent_window, text="Register", width=20, command=save_parent_info).grid(column=1, row=5, sticky=W)
+    # Call to exit:
+    ttk.Button(parent_window, text="Logout", width=20, command=parent_window.destroy).grid(column=1, row=6, sticky=W)
 
 # Register Student
 def register_student():
     student_window  = Toplevel(root)
     student_window .title("Student Registration")
     student_window .geometry("400x300")
+
+    '''
+    student_id INT AUTO_INCREMENT PRIMARY KEY,
+    parent_email VARCHAR(100),
+    name VARCHAR(100),
+    grade VARCHAR(20),
+    FOREIGN KEY (parent_email) REFERENCES parents(email)'''
+
 
     Button(student_window, text="Logout", width=20, command=student_window.destroy).pack(pady=20)
     pass
@@ -79,7 +148,6 @@ def register_bus():
 
 # View trips
 def view_trips():
-
     pass
 
 # Create window tkinter
