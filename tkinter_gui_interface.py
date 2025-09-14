@@ -217,30 +217,92 @@ def register_bus():
     bus_window .title("Bus Registration")
     bus_window .geometry("400x300")
 
-    Button(bus_window, text="Logout", width=20, command=bus_window.destroy).pack(pady=20)
-    pass
+    # Inputs for buses registration:
+    ttk.Label(bus_window, text="Plate:").grid(column=0, row=0, sticky=W)
+    entry_bus_plate = ttk.Entry(bus_window, width=25)
+    entry_bus_plate.grid(column=1, row=0)
+
+    ttk.Label(bus_window, text="Driver Name:").grid(column=0, row=1, sticky=W)
+    entry_driver_name = ttk.Entry(bus_window, width=25)
+    entry_driver_name.grid(column=1, row=1)
+
+    ttk.Label(bus_window, text="Driver Phone:").grid(column=0, row=2, sticky=W)
+    entry_driver_phone = ttk.Entry(bus_window, width=25)
+    entry_driver_phone.grid(column=1, row=2)
+
+    ttk.Label(bus_window, text="Attendant Name:").grid(column=0, row=3, sticky=W)
+    entry_attendant_name = ttk.Entry(bus_window, width=25)
+    entry_attendant_name.grid(column=1, row=3)
+
+    ttk.Label(bus_window, text="Attendant Phone:").grid(column=0, row=4, sticky=W)
+    entry_attendant_phone = ttk.Entry(bus_window, width=25)
+    entry_attendant_phone.grid(column=1, row=4)
+
+    def save_bus_info():
+        # Clean information
+        plate = entry_bus_plate.get().strip()
+        driver_name = entry_driver_name.get().strip()
+        driver_phone = entry_driver_phone.get().strip()
+        attendant_name = entry_attendant_name.get().strip()
+        attendant_phone = entry_attendant_phone.get().strip()
+
+        if not plate or not driver_name or not driver_phone or not attendant_name or not attendant_phone:
+            messagebox.showerror("Error", "All fields are required.")
+            return
+
+        conn = connect_db()
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("""
+                INSERT INTO buses (plate, driver_name, driver_phone, attendant_name, attendant_phone)
+                VALUES (%s, %s, %s, %s, %s)
+                """, (plate, driver_name, driver_phone, attendant_name, attendant_phone))
+
+            conn.commit()
+            messagebox.showinfo("Success", f"Bus {plate} registered successfully!")
+
+            # Clear fields after success
+            entry_bus_plate.delete(0, END)
+            entry_driver_name.delete(0, END)
+            entry_driver_phone.delete(0, END)
+            entry_attendant_name.delete(0, END)
+            entry_attendant_phone.delete(0, END)
+
+        except mysql.connector.IntegrityError:
+            messagebox.showerror("Error", f"Bus {plate} already exists.")
+        except mysql.connector.Error as err:
+            messagebox.showerror("Database Error", str(err))
+        finally:
+            conn.close()
+
+    ttk.Button(bus_window, text="Register", width=25, command=save_bus_info).grid(column=1, row=5, sticky=W)
+    ttk.Button(bus_window, text="Logout", width=25, command=bus_window.destroy).grid(column=1, row=6, sticky=W)
 
 # View trips
 def view_trips():
     pass
 
 # Create window tkinter
-root = Tk()
-root.title("MyShuddle User Administrator")
-root.geometry("300x200")
+def main():
+    root = Tk()
+    root.title("MyShuddle User Administrator")
+    root.geometry("300x200")
 
-frm = ttk.Frame(root, padding=20)
-frm.grid()
+    frm = ttk.Frame(root, padding=20)
+    frm.grid()
 
-# Create inputs for log in
-ttk.Label(frm, text="Email:").grid(column=0, row=0, sticky=W)
-entry_user = ttk.Entry(frm, width=25)
-entry_user.grid(column=1, row=0) 
+    # Create inputs for log in
+    ttk.Label(frm, text="Email:").grid(column=0, row=0, sticky=W)
+    entry_user = ttk.Entry(frm, width=25)
+    entry_user.grid(column=1, row=0) 
 
-ttk.Label(frm, text="Password:").grid(column=0, row=1, sticky=W)
-entry_pass = ttk.Entry(frm, show="*", width=25)
-entry_pass.grid(column=1, row=1)
+    ttk.Label(frm, text="Password:").grid(column=0, row=1, sticky=W)
+    entry_pass = ttk.Entry(frm, show="*", width=25)
+    entry_pass.grid(column=1, row=1)
 
-ttk.Button(frm, text="Login", command=login).grid(column=1, row=2, pady=10)
+    ttk.Button(frm, text="Login", command=login).grid(column=1, row=2, pady=10)
 
-root.mainloop()
+    root.mainloop()
+
+main()

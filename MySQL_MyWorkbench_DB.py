@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS parents (
 """)
 
 cursor.execute("""
-CREATE TABLE students (
+CREATE TABLE IF NOT EXISTS students (
     student_id INT AUTO_INCREMENT PRIMARY KEY,
     parent_email VARCHAR(100),
     first_name VARCHAR(100),
@@ -63,18 +63,20 @@ CREATE TABLE students (
 
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS buses (
-    bus_id INT AUTO_INCREMENT PRIMARY KEY,
-    plate VARCHAR(20),
-    capacity INT
-)
+    plate VARCHAR(20) PRIMARY KEY,
+    driver_name VARCHAR(100),       
+    driver_phone VARCHAR(20),       
+    attendant_name VARCHAR(100),     
+    attendant_phone VARCHAR(20)     
+);
 """)
 
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS trips (
     trip_id INT AUTO_INCREMENT PRIMARY KEY,
-    bus_id INT,
+    plate VARCHAR(20),
     trip_date DATE,
-    FOREIGN KEY (bus_id) REFERENCES buses(bus_id)
+    FOREIGN KEY (plate) REFERENCES buses(plate)
 )
 """)
 
