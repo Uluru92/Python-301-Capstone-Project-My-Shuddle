@@ -133,7 +133,7 @@ def register_student():
     entry_parent_email.grid(column=1, row=0)
 
     ttk.Label(student_window, text="Name:").grid(column=0, row=1, sticky=W)
-    entry_student_name = ttk.Entry(student_window, width=25, show="*")
+    entry_student_name = ttk.Entry(student_window, width=25)
     entry_student_name.grid(column=1, row=1)
 
     ttk.Label(student_window, text="Last Name:").grid(column=0, row=2, sticky=W)
@@ -166,13 +166,13 @@ def register_student():
 
     def save_student_info():
         # Clean information
-        email = entry_parent_email.get().strip()
+        parent_email = entry_parent_email.get().strip()
         name = entry_student_name.get().strip()
         last_name = entry_student_last_name.get().strip()
         birth_day = selected_date_var.get().strip()
 
 
-        if not email or not name or not last_name or not birth_day :
+        if not parent_email or not name or not last_name or not birth_day :
             messagebox.showerror("Error", "All fields are required.")
             return
 
@@ -180,10 +180,17 @@ def register_student():
         cursor = conn.cursor()
 
         try:
+            cursor.execute("SELECT email FROM parents WHERE email = %s", (parent_email,))
+            parent = cursor.fetchone()
+
+            if not parent:
+                messagebox.showerror("Error", "Parent email not found. Please register the parent first.")
+                return
+                
             cursor.execute("""
-                INSERT INTO parents (parent_email, first_name, last_name, birth_date)
+                INSERT INTO students (parent_email, first_name, last_name, birth_date)
                 VALUES (%s, %s, %s, %s)
-                """, (email, name, last_name, birth_day))
+                """, (parent_email, name, last_name, birth_day))
 
             conn.commit()
             messagebox.showinfo("Success", f"Student {name} registered successfully!")
@@ -192,7 +199,7 @@ def register_student():
             entry_parent_email.delete(0, END)
             entry_student_name.delete(0, END)
             entry_student_last_name.delete(0, END)
-            selected_date_var.delete(0, END)
+            selected_date_var.set("No date selected")
 
         except mysql.connector.Error as err:
             messagebox.showerror("Database Error", str(err))
