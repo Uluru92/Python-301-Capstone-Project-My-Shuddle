@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import ttk
+from tkcalendar import DateEntry
 import mysql.connector
 from tkinter import messagebox
 import os
@@ -126,16 +127,82 @@ def register_student():
     student_window .title("Student Registration")
     student_window .geometry("400x300")
 
-    '''
-    student_id INT AUTO_INCREMENT PRIMARY KEY,
-    parent_email VARCHAR(100),
-    name VARCHAR(100),
-    grade VARCHAR(20),
-    FOREIGN KEY (parent_email) REFERENCES parents(email)'''
+    # Inputs for parent registration:
+    ttk.Label(student_window, text="Parent email:").grid(column=0, row=0, sticky=W)
+    entry_parent_email = ttk.Entry(student_window, width=25)
+    entry_parent_email.grid(column=1, row=0)
+
+    ttk.Label(student_window, text="Name:").grid(column=0, row=1, sticky=W)
+    entry_student_name = ttk.Entry(student_window, width=25, show="*")
+    entry_student_name.grid(column=1, row=1)
+
+    ttk.Label(student_window, text="Last Name:").grid(column=0, row=2, sticky=W)
+    entry_student_last_name = ttk.Entry(student_window, width=25)
+    entry_student_last_name.grid(column=1, row=2)
+    
+    selected_date_var = StringVar(value="No date selected")
+    
+    def select_birth_date():
+        birthday_window = Toplevel(root)
+        birthday_window.title("Select Birth Date")
+        birthday_window.geometry("400x300")
+
+        ttk.Label(birthday_window, text="Select Birth Date:").pack(pady=10)
+
+        birth_date = DateEntry(birthday_window, width=15, background="darkblue",
+                       foreground="white", borderwidth=2,
+                       date_pattern="yyyy-mm-dd")  # format for MySQL
+        birth_date.pack(pady=10)
+
+        def save_date():
+            selected = birth_date.get()  # returns string "YYYY-MM-DD"
+            selected_date_var.set(selected)  # update label text
+            birthday_window.destroy()
+
+        ttk.Button(birthday_window, text="Save date", command=save_date).pack(pady=10)
+
+    ttk.Button(student_window, text="Select Birth Date", command=select_birth_date).grid(column=0, row=3, sticky=W)
+    ttk.Label(student_window, textvariable=selected_date_var).grid(column=1, row=3, sticky=W)
+
+    def save_student_info():
+        # Clean information
+        email = entry_parent_email.get().strip()
+        name = entry_student_name.get().strip()
+        last_name = entry_student_last_name.get().strip()
+        birth_day = selected_date_var.get().strip()
 
 
-    Button(student_window, text="Logout", width=20, command=student_window.destroy).pack(pady=20)
-    pass
+        if not email or not name or not last_name or not birth_day :
+            messagebox.showerror("Error", "All fields are required.")
+            return
+
+        conn = connect_db()
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("""
+                INSERT INTO parents (parent_email, first_name, last_name, birth_date)
+                VALUES (%s, %s, %s, %s)
+                """, (email, name, last_name, birth_day))
+
+            conn.commit()
+            messagebox.showinfo("Success", f"Student {name} registered successfully!")
+
+            # Clear fields after success
+            entry_parent_email.delete(0, END)
+            entry_student_name.delete(0, END)
+            entry_student_last_name.delete(0, END)
+            selected_date_var.delete(0, END)
+
+        except mysql.connector.Error as err:
+            messagebox.showerror("Database Error", str(err))
+        finally:
+            conn.close()
+
+    # Call to registration:
+    ttk.Button(student_window, text="Register", width=25, command=save_student_info).grid(column=1, row=4, sticky=W)
+    # Call to exit:
+    ttk.Button(student_window, text="Logout", width=25, command=student_window.destroy).grid(column=1, row=5, sticky=W)
 
 # Register Bus
 def register_bus():

@@ -51,11 +51,12 @@ CREATE TABLE IF NOT EXISTS parents (
 """)
 
 cursor.execute("""
-CREATE TABLE IF NOT EXISTS students (
+CREATE TABLE students (
     student_id INT AUTO_INCREMENT PRIMARY KEY,
     parent_email VARCHAR(100),
-    name VARCHAR(100),
-    grade VARCHAR(20),
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
+    birth_date DATE,
     FOREIGN KEY (parent_email) REFERENCES parents(email)
 );
 """)
