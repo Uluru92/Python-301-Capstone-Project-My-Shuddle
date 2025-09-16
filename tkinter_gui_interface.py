@@ -37,7 +37,7 @@ def open_admin_dashboard():
     Label(dashboard_window, text="MyShuddle Admin Panel", font=("Arial", 14, "bold")).pack(pady=10)
     Button(dashboard_window, text="Register Parent", width=20, command=lambda:register_parent(dashboard_window)).pack(pady=5)
     Button(dashboard_window, text="Register Student", width=20, command=lambda: register_student(dashboard_window)).pack(pady=5)
-    Button(dashboard_window, text="Register Bus", width=20, command=register_bus).pack(pady=5)
+    Button(dashboard_window, text="Register Bus", width=20, command=lambda: register_bus(dashboard_window)).pack(pady=5)
     Button(dashboard_window, text="View Trips", width=20, command=view_trips).pack(pady=5)
     Button(dashboard_window, text="Logout", width=20, command=dashboard_window.destroy).pack(pady=20)
     
@@ -277,7 +277,8 @@ def register_student(parent_window):
     student_window.wait_window()
 
 # Register Bus
-def register_bus():
+def register_bus(parent_window):
+    parent_window.withdraw()
     bus_window  = Toplevel(root)
     bus_window .title("Bus Registration")
     bus_window .geometry("400x300")
@@ -342,7 +343,18 @@ def register_bus():
             conn.close()
 
     ttk.Button(bus_window, text="Register", width=25, command=save_bus_info).grid(column=1, row=5, sticky=W)
-    ttk.Button(bus_window, text="Logout", width=25, command=bus_window.destroy).grid(column=1, row=6, sticky=W)
+
+    # Call to exit:
+    def close_student_window():
+        bus_window.destroy()
+        parent_window.deiconify() 
+    
+    ttk.Button(bus_window, text="Logout", width=25, command=close_student_window).grid(column=1, row=6, sticky=W)
+
+    bus_window.protocol("WM_DELETE_WINDOW", close_student_window)
+    bus_window.grab_set()
+    bus_window.focus_force()
+    bus_window.wait_window()
 
 # View trips
 def view_trips():
