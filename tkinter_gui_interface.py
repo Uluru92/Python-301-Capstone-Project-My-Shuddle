@@ -29,16 +29,24 @@ def connect_db():
 
 # Admin dashboard window
 def open_admin_dashboard():
-    dashboard = Toplevel(root)
-    dashboard.title("Admin Dashboard - MyShuddle")
-    dashboard.geometry("400x300")
+    root.withdraw()
+    dashboard_window = Toplevel(root)
+    dashboard_window.title("Admin Dashboard - MyShuddle")
+    dashboard_window.geometry("400x300")
 
-    Label(dashboard, text="MyShuddle Admin Panel", font=("Arial", 14, "bold")).pack(pady=10)
-    Button(dashboard, text="Register Parent", width=20, command=register_parent).pack(pady=5)
-    Button(dashboard, text="Register Student", width=20, command=register_student).pack(pady=5)
-    Button(dashboard, text="Register Bus", width=20, command=register_bus).pack(pady=5)
-    Button(dashboard, text="View Trips", width=20, command=view_trips).pack(pady=5)
-    Button(dashboard, text="Logout", width=20, command=dashboard.destroy).pack(pady=20)
+    Label(dashboard_window, text="MyShuddle Admin Panel", font=("Arial", 14, "bold")).pack(pady=10)
+    Button(dashboard_window, text="Register Parent", width=20, command=lambda:register_parent(dashboard_window)).pack(pady=5)
+    Button(dashboard_window, text="Register Student", width=20, command=lambda: register_student(dashboard_window)).pack(pady=5)
+    Button(dashboard_window, text="Register Bus", width=20, command=register_bus).pack(pady=5)
+    Button(dashboard_window, text="View Trips", width=20, command=view_trips).pack(pady=5)
+    Button(dashboard_window, text="Logout", width=20, command=dashboard_window.destroy).pack(pady=20)
+    
+    def on_close_dashboard(window):
+        window.destroy()
+        root.deiconify() 
+
+    dashboard_window.protocol("WM_DELETE_WINDOW", lambda: on_close_dashboard(dashboard_window))
+    root.wait_window(dashboard_window)
 
 # Login function
 def login():
@@ -52,30 +60,31 @@ def login():
         messagebox.showerror("Login Failed", "Invalid admin credentials.")
 
 # Register Parent
-def register_parent():
-    parent_window = Toplevel(root)
-    parent_window.title("Parent Registration")
-    parent_window.geometry("400x300")
+def register_parent(parent_window):
+    parent_window.withdraw()
+    parents_window = Toplevel(parent_window)
+    parents_window.title("Parent Registration")
+    parents_window.geometry("400x300")
 
     # Inputs for parent registration:
-    ttk.Label(parent_window, text="Email:").grid(column=0, row=0, sticky=W)
-    entry_email = ttk.Entry(parent_window, width=25)
+    ttk.Label(parents_window, text="Email:").grid(column=0, row=0, sticky=W)
+    entry_email = ttk.Entry(parents_window, width=25)
     entry_email.grid(column=1, row=0)
 
-    ttk.Label(parent_window, text="Password:").grid(column=0, row=1, sticky=W)
-    entry_password = ttk.Entry(parent_window, width=25, show="*")
+    ttk.Label(parents_window, text="Password:").grid(column=0, row=1, sticky=W)
+    entry_password = ttk.Entry(parents_window, width=25, show="*")
     entry_password.grid(column=1, row=1)
 
-    ttk.Label(parent_window, text="Name:").grid(column=0, row=2, sticky=W)
-    entry_name = ttk.Entry(parent_window, width=25)
+    ttk.Label(parents_window, text="Name:").grid(column=0, row=2, sticky=W)
+    entry_name = ttk.Entry(parents_window, width=25)
     entry_name.grid(column=1, row=2)
 
-    ttk.Label(parent_window, text="Last Name:").grid(column=0, row=3, sticky=W)
-    entry_last_name = ttk.Entry(parent_window, width=25)
+    ttk.Label(parents_window, text="Last Name:").grid(column=0, row=3, sticky=W)
+    entry_last_name = ttk.Entry(parents_window, width=25)
     entry_last_name.grid(column=1, row=3)
 
-    ttk.Label(parent_window, text="Phone:").grid(column=0, row=4, sticky=W)
-    entry_phone = ttk.Entry(parent_window, width=25)
+    ttk.Label(parents_window, text="Phone:").grid(column=0, row=4, sticky=W)
+    entry_phone = ttk.Entry(parents_window, width=25)
     entry_phone.grid(column=1, row=4)
 
     def save_parent_info():
@@ -117,15 +126,26 @@ def register_parent():
             conn.close()
 
     # Call to registration:
-    ttk.Button(parent_window, text="Register", width=20, command=save_parent_info).grid(column=1, row=5, sticky=W)
+    ttk.Button(parents_window, text="Register", width=25, command=save_parent_info).grid(column=1, row=5, sticky=W)
+
     # Call to exit:
-    ttk.Button(parent_window, text="Logout", width=20, command=parent_window.destroy).grid(column=1, row=6, sticky=W)
+    def close_parents_window():
+        parents_window.destroy()
+        parent_window.deiconify() 
+    
+    ttk.Button(parents_window, text="Logout", width=25, command=close_parents_window).grid(column=1, row=6, sticky=W)
+
+    parents_window.protocol("WM_DELETE_WINDOW", close_parents_window)
+    parents_window.grab_set()
+    parents_window.focus_force()
+    parents_window.wait_window()
 
 # Register Student
-def register_student():
-    student_window  = Toplevel(root)
+def register_student(parent_window):
+    parent_window.withdraw()
+    student_window  = Toplevel(parent_window)
     student_window .title("Student Registration")
-    student_window .geometry("400x300")
+    student_window .geometry("600x600")
 
     # Inputs for parent registration:
     ttk.Label(student_window, text="Parent email:").grid(column=0, row=0, sticky=W)
@@ -143,7 +163,7 @@ def register_student():
     selected_date_var = StringVar(value="No date selected")
     
     def select_birth_date():
-        birthday_window = Toplevel(root)
+        birthday_window = Toplevel(student_window)
         birthday_window.title("Select Birth Date")
         birthday_window.geometry("400x300")
 
@@ -160,6 +180,9 @@ def register_student():
             birthday_window.destroy()
 
         ttk.Button(birthday_window, text="Save date", command=save_date).pack(pady=10)
+        birthday_window.transient(student_window)  
+        birthday_window.grab_set()  
+        student_window.wait_window(birthday_window)
 
     ttk.Button(student_window, text="Select Birth Date", command=select_birth_date).grid(column=0, row=3, sticky=W)
     ttk.Label(student_window, textvariable=selected_date_var).grid(column=1, row=3, sticky=W)
@@ -215,14 +238,15 @@ def register_student():
             img = qr.make_image(fill_color="black", back_color="white")
             img.save(file_path)
 
-            # Mostrar QR en la ventana
+            # Show QR generated
             qr_img = Image.open(file_path)
             qr_img = qr_img.resize((150, 150))
             tk_img = ImageTk.PhotoImage(qr_img)
 
             qr_label = Label(student_window, image=tk_img)
-            qr_label.image = tk_img  # importante para mantener referencia
-            qr_label.grid(column=1, row=6, pady=10)
+            qr_label.image = tk_img  # to keep reference
+            qr_label.grid(column=1, row=5, pady=10)
+            ttk.Label(student_window, text="--- Student QR ---").grid(column=1, row=6, sticky=EW)
 
             messagebox.showinfo("Success", f"Student {name} registered successfully!")
 
@@ -239,8 +263,18 @@ def register_student():
 
     # Call to registration:
     ttk.Button(student_window, text="Register", width=25, command=save_student_info).grid(column=1, row=4, sticky=W)
+
     # Call to exit:
-    ttk.Button(student_window, text="Logout", width=25, command=student_window.destroy).grid(column=1, row=5, sticky=W)
+    def close_student_window():
+        student_window.destroy()
+        parent_window.deiconify() 
+    
+    ttk.Button(student_window, text="Logout", width=25, command=close_student_window).grid(column=1, row=7, sticky=W)
+
+    student_window.protocol("WM_DELETE_WINDOW", close_student_window)
+    student_window.grab_set()
+    student_window.focus_force()
+    student_window.wait_window()
 
 # Register Bus
 def register_bus():
@@ -335,4 +369,3 @@ entry_pass.grid(column=1, row=1)
 ttk.Button(frm, text="Login", command=login).grid(column=1, row=2, pady=10)
 
 root.mainloop()
-
