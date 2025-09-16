@@ -77,6 +77,7 @@ CREATE TABLE IF NOT EXISTS trips (
     plate VARCHAR(20),
     trip_date DATE,
     FOREIGN KEY (plate) REFERENCES buses(plate)
+    # Should I add the students list?
 )
 """)
 
