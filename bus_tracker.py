@@ -11,9 +11,7 @@ app = Flask(__name__)
 CORS(app)  # habilita CORS para que el navegador pueda enviar POST
 coords_list = []  # Lista de dicts: {'bus_id', 'lat', 'lng', 'timestamp'}
 
-
-
-# URL pública de ngrok fija
+# Public ngrok URL - Needs to be updated every 8 hours or so
 PUBLIC_URL = "https://8e37d919c96a.ngrok-free.app"
 print("🌍 Usando URL pública:", PUBLIC_URL)
 
@@ -41,12 +39,12 @@ def show_map():
 
     m = folium.Map(location=center, zoom_start=15)
 
-    # Dibujar ruta
+    # Draw Route
     if len(coords_list) > 1:
         path = [(c['lat'], c['lng']) for c in coords_list]
         folium.PolyLine(path, color="blue", weight=5).add_to(m)
 
-    # Agregar marcadores
+    # Add points in the map
     for c in coords_list:
         folium.Marker(
             location=(c['lat'], c['lng']),
@@ -58,7 +56,7 @@ def show_map():
 def run_flask():
     app.run(host="0.0.0.0", port=5000, use_reloader=False)
 
-# -------------------- Crear mapa --------------------
+# -------------------- Create map --------------------
 def create_map():
     if coords_list:
         center = (coords_list[-1]['lat'], coords_list[-1]['lng'])
@@ -67,12 +65,12 @@ def create_map():
 
     m = folium.Map(location=center, zoom_start=15)
 
-    # Dibujar ruta
+    # Draw route
     if len(coords_list) > 1:
         path = [(c['lat'], c['lng']) for c in coords_list]
         folium.PolyLine(path, color="blue", weight=5).add_to(m)
 
-    # Agregar marcadores con info
+    # Add points in the map
     for i, c in enumerate(coords_list):
         popup_text = f"Bus: {c['bus_id']}<br>Lat: {c['lat']}<br>Lng: {c['lng']}<br>Hora: {c['timestamp']}"
         folium.Marker(location=(c['lat'], c['lng']), popup=popup_text).add_to(m)
@@ -96,7 +94,7 @@ map_label.pack(fill="both", expand=True)
 
 root.after(1000, update_map)
 
-# -------------------- Correr Flask --------------------
+# -------------------- Run Flask --------------------
 flask_thread = threading.Thread(target=run_flask)
 flask_thread.daemon = True
 flask_thread.start()
