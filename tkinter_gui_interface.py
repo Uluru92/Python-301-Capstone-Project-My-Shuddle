@@ -1,9 +1,9 @@
 from tkinter import *
 from tkinter import ttk
 from tkcalendar import DateEntry
-import mysql.connector
 from tkinter import messagebox
-import os
+from PIL import Image, ImageTk
+import mysql.connector, qrcode, json, os
 from dotenv import load_dotenv
 
 # Admin user Tkinter
@@ -193,6 +193,37 @@ def register_student():
                 """, (parent_email, name, last_name, birth_day))
 
             conn.commit()
+
+            student_id = cursor.lastrowid  # <<< ID student just created
+
+            # Show QR created with the student info
+            student = {
+                "student_id": student_id,
+                "name": f"{name} {last_name}",
+                "parent_email": parent_email,
+                "birth_date": birth_day
+            }
+            
+            os.makedirs("qrs", exist_ok=True)
+
+            student_data = json.dumps(student)
+            qr = qrcode.QRCode(version=1, box_size=5, border=2)
+            qr.add_data(student_data)
+            qr.make(fit=True)
+
+            file_path = f"qrs/student_{student_id}.png"
+            img = qr.make_image(fill_color="black", back_color="white")
+            img.save(file_path)
+
+            # Mostrar QR en la ventana
+            qr_img = Image.open(file_path)
+            qr_img = qr_img.resize((150, 150))
+            tk_img = ImageTk.PhotoImage(qr_img)
+
+            qr_label = Label(student_window, image=tk_img)
+            qr_label.image = tk_img  # importante para mantener referencia
+            qr_label.grid(column=1, row=6, pady=10)
+
             messagebox.showinfo("Success", f"Student {name} registered successfully!")
 
             # Clear fields after success
@@ -284,25 +315,24 @@ def view_trips():
     pass
 
 # Create window tkinter
-def main():
-    root = Tk()
-    root.title("MyShuddle User Administrator")
-    root.geometry("300x200")
 
-    frm = ttk.Frame(root, padding=20)
-    frm.grid()
+root = Tk()
+root.title("MyShuddle User Administrator")
+root.geometry("300x200")
 
-    # Create inputs for log in
-    ttk.Label(frm, text="Email:").grid(column=0, row=0, sticky=W)
-    entry_user = ttk.Entry(frm, width=25)
-    entry_user.grid(column=1, row=0) 
+frm = ttk.Frame(root, padding=20)
+frm.grid()
 
-    ttk.Label(frm, text="Password:").grid(column=0, row=1, sticky=W)
-    entry_pass = ttk.Entry(frm, show="*", width=25)
-    entry_pass.grid(column=1, row=1)
+# Create inputs for log in
+ttk.Label(frm, text="Email:").grid(column=0, row=0, sticky=W)
+entry_user = ttk.Entry(frm, width=25)
+entry_user.grid(column=1, row=0) 
 
-    ttk.Button(frm, text="Login", command=login).grid(column=1, row=2, pady=10)
+ttk.Label(frm, text="Password:").grid(column=0, row=1, sticky=W)
+entry_pass = ttk.Entry(frm, show="*", width=25)
+entry_pass.grid(column=1, row=1)
 
-    root.mainloop()
+ttk.Button(frm, text="Login", command=login).grid(column=1, row=2, pady=10)
 
-main()
+root.mainloop()
+
