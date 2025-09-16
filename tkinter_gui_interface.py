@@ -28,7 +28,7 @@ def connect_db():
     )
 
 # Admin dashboard window
-def open_admin_dashboard():
+def open_admin_dashboard(root):
     root.withdraw()
     dashboard_window = Toplevel(root)
     dashboard_window.title("Admin Dashboard - MyShuddle")
@@ -39,23 +39,23 @@ def open_admin_dashboard():
     Button(dashboard_window, text="Register Student", width=20, command=lambda: register_student(dashboard_window)).pack(pady=5)
     Button(dashboard_window, text="Register Bus", width=20, command=lambda: register_bus(dashboard_window)).pack(pady=5)
     Button(dashboard_window, text="View Trips", width=20, command=view_trips).pack(pady=5)
-    Button(dashboard_window, text="Logout", width=20, command=dashboard_window.destroy).pack(pady=20)
+    Button(dashboard_window, text="Logout", width=20, command=lambda: on_close_dashboard(dashboard_window, root)).pack(pady=20)
     
-    def on_close_dashboard(window):
+    def on_close_dashboard(window, root):
         window.destroy()
-        root.deiconify() 
+        root.deiconify()
 
-    dashboard_window.protocol("WM_DELETE_WINDOW", lambda: on_close_dashboard(dashboard_window))
+    dashboard_window.protocol("WM_DELETE_WINDOW", lambda: on_close_dashboard(dashboard_window, root))
     root.wait_window(dashboard_window)
 
 # Login function
-def login():
+def login(root, entry_user, entry_pass):
     email = entry_user.get()
     password = entry_pass.get()
 
     if email == admin_email and password == admin_password:
         messagebox.showinfo("Login Success", f"Welcome, {email}!")
-        open_admin_dashboard()
+        open_admin_dashboard(root)
     else:
         messagebox.showerror("Login Failed", "Invalid admin credentials.")
 
@@ -279,7 +279,7 @@ def register_student(parent_window):
 # Register Bus
 def register_bus(parent_window):
     parent_window.withdraw()
-    bus_window  = Toplevel(root)
+    bus_window  = Toplevel(parent_window)
     bus_window .title("Bus Registration")
     bus_window .geometry("400x300")
 
@@ -361,23 +361,26 @@ def view_trips():
     pass
 
 # Create window tkinter
+def run_main():
+    root = Tk()
+    root.title("MyShuddle User Administrator")
+    root.geometry("300x200")
 
-root = Tk()
-root.title("MyShuddle User Administrator")
-root.geometry("300x200")
+    frm = ttk.Frame(root, padding=20)
+    frm.grid()
 
-frm = ttk.Frame(root, padding=20)
-frm.grid()
+    # Create inputs for log in
+    ttk.Label(frm, text="Email:").grid(column=0, row=0, sticky=W)
+    entry_user = ttk.Entry(frm, width=25)
+    entry_user.grid(column=1, row=0) 
 
-# Create inputs for log in
-ttk.Label(frm, text="Email:").grid(column=0, row=0, sticky=W)
-entry_user = ttk.Entry(frm, width=25)
-entry_user.grid(column=1, row=0) 
+    ttk.Label(frm, text="Password:").grid(column=0, row=1, sticky=W)
+    entry_pass = ttk.Entry(frm, show="*", width=25)
+    entry_pass.grid(column=1, row=1)
 
-ttk.Label(frm, text="Password:").grid(column=0, row=1, sticky=W)
-entry_pass = ttk.Entry(frm, show="*", width=25)
-entry_pass.grid(column=1, row=1)
+    ttk.Button(frm, text="Login", command=lambda: login(root, entry_user, entry_pass)).grid(column=1, row=2, pady=5)
+    ttk.Button(frm, text="Logout", command=root.destroy).grid(column=1, row=3)
 
-ttk.Button(frm, text="Login", command=login).grid(column=1, row=2, pady=10)
+    root.mainloop()
 
-root.mainloop()
+run_main()
