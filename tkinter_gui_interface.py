@@ -217,152 +217,157 @@ def register_student(parent_window):
     student_window .title("Student Registration")
     student_window .geometry("600x600")
 
+    # Make the window resizable
+    student_window.grid_rowconfigure(0, weight=1)
+    student_window.grid_columnconfigure(0, weight=1)
+
+    # Create a scrollable frame
+    canvas = Canvas(student_window)
+    scrollbar = Scrollbar(student_window, orient="vertical", command=canvas.yview)
+    scroll_frame = Frame(canvas)
+
+    scroll_frame.bind(
+        "<Configure>",
+        lambda e: canvas.configure(
+            scrollregion=canvas.bbox("all")
+        )
+    )
+
+    canvas.create_window((0,0), window=scroll_frame, anchor="nw")
+    canvas.configure(yscrollcommand=scrollbar.set)
+
+    canvas.grid(row=0, column=0, sticky="NSEW")
+    scrollbar.grid(row=0, column=1, sticky="NS")
+
     # Inputs for parent registration:
-    ttk.Label(student_window, text="Parent email:").grid(column=0, row=0, sticky=W)
-    entry_parent_email = ttk.Entry(student_window, width=25)
-    entry_parent_email.grid(column=1, row=0)
+    ttk.Label(scroll_frame, text="Parent email:").grid(column=0, row=0, sticky=W, pady=5)
+    entry_parent_email = ttk.Entry(scroll_frame, width=25)
+    entry_parent_email.grid(column=1, row=0, pady=5)
 
-    ttk.Label(student_window, text="Name:").grid(column=0, row=1, sticky=W)
-    entry_student_name = ttk.Entry(student_window, width=25)
-    entry_student_name.grid(column=1, row=1)
+    ttk.Label(scroll_frame, text="First Name:").grid(column=0, row=1, sticky=W, pady=5)
+    entry_student_name = ttk.Entry(scroll_frame, width=25)
+    entry_student_name.grid(column=1, row=1, pady=5)
 
-    ttk.Label(student_window, text="Last Name:").grid(column=0, row=2, sticky=W)
-    entry_student_last_name = ttk.Entry(student_window, width=25)
-    entry_student_last_name.grid(column=1, row=2)
+    ttk.Label(scroll_frame, text="Last Name:").grid(column=0, row=2, sticky=W, pady=5)
+    entry_student_last_name = ttk.Entry(scroll_frame, width=25)
+    entry_student_last_name.grid(column=1, row=2, pady=5)
     
-    # --- School selection (ComboBox) ---
-    ttk.Label(student_window, text="School:").grid(column=0, row=3, sticky=W)
+     # --- School selection ---
+    ttk.Label(scroll_frame, text="School:").grid(column=0, row=3, sticky=W, pady=5)
     school_var = StringVar()
-    combo_school = ttk.Combobox(student_window, textvariable=school_var, width=25, state="readonly")
-    combo_school.grid(column=1, row=3)
+    combo_school = ttk.Combobox(scroll_frame, textvariable=school_var, width=25, state="readonly")
+    combo_school.grid(column=1, row=3, pady=5)
 
     # Load schools from DB
     conn = connect_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT school_id, name FROM schools")
+    cursor.execute("SELECT school_phone, school_name FROM schools")
     schools = cursor.fetchall()
     conn.close()
 
-    school_map = {name: school_id for school_id, name in schools}  # map name -> id
+    # Map display_name -> school_phone
+    school_map = {f"{phone} - {name}": phone for phone, name in schools}
     combo_school['values'] = list(school_map.keys())
     if combo_school['values']:
-        combo_school.current(0)  # select default 0
+        combo_school.current(0)
 
-    # --- Birthday selection Modal ---
+    # --- Birthday selection ---
     selected_date_var = StringVar(value="No date selected")
-    
+
     def select_birth_date():
         birthday_window = Toplevel(student_window)
         birthday_window.title("Select Birth Date")
         birthday_window.geometry("400x300")
-
         ttk.Label(birthday_window, text="Select Birth Date:").pack(pady=10)
 
         birth_date = DateEntry(birthday_window, width=15, background="darkblue",
-                       foreground="white", borderwidth=2,
-                       date_pattern="yyyy-mm-dd")  # format for MySQL
+                               foreground="white", borderwidth=2, date_pattern="yyyy-mm-dd")
         birth_date.pack(pady=10)
 
         def save_date():
-            selected = birth_date.get()  # returns string "YYYY-MM-DD"
-            selected_date_var.set(selected)  # update label text
+            selected_date_var.set(birth_date.get())
             birthday_window.destroy()
 
         ttk.Button(birthday_window, text="Save date", command=save_date).pack(pady=10)
-        birthday_window.transient(student_window)  
-        birthday_window.grab_set()  
-        
-    ttk.Button(student_window, text="Select Birth Date", command=select_birth_date).grid(column=0, row=4, sticky=W)
-    ttk.Label(student_window, textvariable=selected_date_var).grid(column=1, row=4, sticky=W)
+        birthday_window.transient(student_window)
+        birthday_window.grab_set()
 
+    ttk.Button(scroll_frame, text="Select Birth Date", command=select_birth_date).grid(column=0, row=4, sticky=W, pady=5)
+    ttk.Label(scroll_frame, textvariable=selected_date_var).grid(column=1, row=4, sticky=W, pady=5)
+
+    # --- Save student info ---
     def save_student_info():
-        # Clean information
         parent_email = entry_parent_email.get().strip()
-        name = entry_student_name.get().strip()
+        first_name = entry_student_name.get().strip()
         last_name = entry_student_last_name.get().strip()
         birth_day = selected_date_var.get().strip()
-        school_name = school_var.get().strip()
+        school_selection = school_var.get()
+        school_phone = school_map.get(school_selection)
 
-        if not parent_email or not name or not last_name or not birth_day or not school_name:
+        if not parent_email or not first_name or not last_name or not birth_day or not school_phone:
             messagebox.showerror("Error", "All fields are required.")
             return
-        
-        school_id = school_map.get(school_name)  # get ID from school
 
         conn = connect_db()
         cursor = conn.cursor()
-
         try:
             cursor.execute("SELECT email FROM parents WHERE email = %s", (parent_email,))
             parent = cursor.fetchone()
-
             if not parent:
                 messagebox.showerror("Error", "Parent email not found. Please register the parent first.")
                 return
-                
+
             cursor.execute("""
-                INSERT INTO students (parent_email, first_name, last_name, birth_date, school_id)
+                INSERT INTO students (parent_email, first_name, last_name, birth_date, school_phone)
                 VALUES (%s, %s, %s, %s, %s)
-                """, (parent_email, name, last_name, birth_day,school_id))
-
+            """, (parent_email, first_name, last_name, birth_day, school_phone))
             conn.commit()
+            student_id = cursor.lastrowid
 
-            student_id = cursor.lastrowid  # <<< ID student just created
-
-            # Show QR created with the student info
-            student = {
+            # Generate QR
+            student_data = json.dumps({
                 "student_id": student_id,
-                "name": f"{name} {last_name}",
+                "name": f"{first_name} {last_name}",
                 "parent_email": parent_email,
-                "birth_date": birth_day
-            }
-            
+                "birth_date": birth_day,
+                "school_phone": school_phone
+            })
             os.makedirs("qrs", exist_ok=True)
+            qr_file = f"qrs/student_{student_id}.png"
+            qr = qrcode.make(student_data)
+            qr.save(qr_file)
 
-            student_data = json.dumps(student)
-            qr = qrcode.QRCode(version=1, box_size=5, border=2)
-            qr.add_data(student_data)
-            qr.make(fit=True)
-
-            file_path = f"qrs/student_{student_id}.png"
-            img = qr.make_image(fill_color="black", back_color="white")
-            img.save(file_path)
-
-            # Show QR generated
-            qr_img = Image.open(file_path)
-            qr_img = qr_img.resize((150, 150))
+            # Show QR
+            qr_img = Image.open(qr_file).resize((150, 150))
             tk_img = ImageTk.PhotoImage(qr_img)
-
-            qr_label = Label(student_window, image=tk_img)
-            qr_label.image = tk_img  # to keep reference
+            qr_label = Label(scroll_frame, image=tk_img)
+            qr_label.image = tk_img
             qr_label.grid(column=1, row=5, pady=10)
-            ttk.Label(student_window, text="--- Student QR ---").grid(column=1, row=6, sticky=EW)
+            ttk.Label(scroll_frame, text="--- Student QR ---").grid(column=1, row=6, pady=5)
 
-            messagebox.showinfo("Success", f"Student {name} registered successfully!")
-
-            # Clear fields after success
+            messagebox.showinfo("Success", f"Student {first_name} registered successfully!")
+            # Clear fields
             entry_parent_email.delete(0, END)
             entry_student_name.delete(0, END)
             entry_student_last_name.delete(0, END)
             selected_date_var.set("No date selected")
-            school_var.set("No school selected")
+            school_var.set(combo_school['values'][0])
 
         except mysql.connector.Error as err:
             messagebox.showerror("Database Error", str(err))
         finally:
             conn.close()
 
-    # Call to registration:
-    ttk.Button(student_window, text="Register", width=25, command=save_student_info).grid(column=1, row=7, sticky=W)
+    ttk.Button(scroll_frame, text="Register", width=25, command=save_student_info).grid(column=1, row=7, sticky=W, pady=5)
 
-    # Call to exit:
-    def close_student_window(window,parent_window):
+    # --- Logout button ---
+    def close_student_window(window, parent_window):
         window.destroy()
-        parent_window.deiconify() 
-    
-    ttk.Button(student_window, text="Logout", width=25, command=lambda:close_student_window(student_window, parent_window)).grid(column=1, row=8, sticky=W)
+        parent_window.deiconify()
 
-    student_window.protocol("WM_DELETE_WINDOW", lambda:close_student_window(student_window, parent_window))
+    ttk.Button(scroll_frame, text="Logout", width=25, command=lambda: close_student_window(student_window, parent_window)).grid(column=1, row=8, sticky=W, pady=5)
+
+    student_window.protocol("WM_DELETE_WINDOW", lambda: close_student_window(student_window, parent_window))
     student_window.grab_set()
     student_window.focus_force()
     student_window.wait_window()
