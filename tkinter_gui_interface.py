@@ -39,7 +39,7 @@ def open_admin_dashboard(root):
     Button(dashboard_window, text="Register Parent", width=20, command=lambda:register_parent(dashboard_window)).pack(pady=5)
     Button(dashboard_window, text="Register Student", width=20, command=lambda: register_student(dashboard_window)).pack(pady=5)
     Button(dashboard_window, text="Register Bus", width=20, command=lambda: register_bus(dashboard_window)).pack(pady=5)
-    Button(dashboard_window, text="View Trips", width=20, command=view_trips).pack(pady=5)
+    Button(dashboard_window, text="View Trips", width=20, command=lambda:view_trips(dashboard_window)).pack(pady=5)
     Button(dashboard_window, text="Logout", width=20, command=lambda: on_close_dashboard(dashboard_window,root)).pack(pady=20)
     
     def on_close_dashboard(window, root):
@@ -67,18 +67,28 @@ def register_school(parent_window):
     school_window.title("School Registration")
     school_window.geometry("400x300")
 
-    # Inputs for parent registration:
-    ttk.Label(school_window, text="Phone Number:").grid(column=0, row=0, sticky=W)
-    entry_school_phone= ttk.Entry(school_window, width=25)
-    entry_school_phone.grid(column=1, row=0)
+    # Make a 2×2 grid on the root of this window
+    school_window.grid_rowconfigure(0, weight=1)
+    school_window.grid_rowconfigure(2, weight=1)
+    school_window.grid_columnconfigure(0, weight=1)
+    school_window.grid_columnconfigure(2, weight=1)
 
-    ttk.Label(school_window, text="School Name:").grid(column=0, row=1, sticky=W)
-    entry_school_name = ttk.Entry(school_window, width=25)
-    entry_school_name.grid(column=1, row=1)
+    # Center frame
+    frm = ttk.Frame(school_window, padding=20)
+    frm.grid(row=1, column=1, sticky="nsew")
 
-    ttk.Label(school_window, text="Address:").grid(column=0, row=2, sticky=W)
-    entry_school_address = ttk.Entry(school_window, width=25)
-    entry_school_address.grid(column=1, row=2)
+    # Inputs for school registration:
+    ttk.Label(frm, text="Phone Number:").grid(column=0, row=0, sticky=W, pady=5)
+    entry_school_phone = ttk.Entry(frm, width=25)
+    entry_school_phone.grid(column=1, row=0, pady=5)
+
+    ttk.Label(frm, text="School Name:").grid(column=0, row=1, sticky=W, pady=5)
+    entry_school_name = ttk.Entry(frm, width=25)
+    entry_school_name.grid(column=1, row=1, pady=5)
+
+    ttk.Label(frm, text="Address:").grid(column=0, row=2, sticky=W, pady=5)
+    entry_school_address = ttk.Entry(frm, width=25)
+    entry_school_address.grid(column=1, row=2, pady=5)
 
     def save_school_info():
         # Clean information
@@ -115,14 +125,14 @@ def register_school(parent_window):
             conn.close()
 
     # Call to registration:
-    ttk.Button(school_window, text="Register", width=25, command=save_school_info).grid(column=1, row=5, sticky=W)
+    ttk.Button(frm, text="Register", width=25, command=save_school_info).grid(column=1, row=5, sticky=W)
 
     # Call to exit:
     def close_school_window(window, parent_window):
         window.destroy()
         parent_window.deiconify() 
     
-    ttk.Button(school_window, text="Logout", width=25, command=lambda:close_school_window(school_window, parent_window)).grid(column=1, row=6, sticky=W)
+    ttk.Button(frm, text="Logout", width=25, command=lambda:close_school_window(school_window, parent_window)).grid(column=1, row=6, sticky=W)
 
     school_window.protocol("WM_DELETE_WINDOW", lambda:close_school_window(school_window, parent_window))
     school_window.grab_set()
@@ -136,25 +146,35 @@ def register_parent(parent_window):
     parents_window.title("Parent Registration")
     parents_window.geometry("400x300")
 
+    # Make a 2×2 grid on the root of this window
+    parents_window.grid_rowconfigure(0, weight=1)
+    parents_window.grid_rowconfigure(2, weight=1)
+    parents_window.grid_columnconfigure(0, weight=1)
+    parents_window.grid_columnconfigure(2, weight=1)
+
+    # Center frame
+    frm = ttk.Frame(parents_window, padding=20)
+    frm.grid(row=1, column=1, sticky="nsew")
+
     # Inputs for parent registration:
-    ttk.Label(parents_window, text="Email:").grid(column=0, row=0, sticky=W)
-    entry_email = ttk.Entry(parents_window, width=25)
+    ttk.Label(frm, text="Email:").grid(column=0, row=0, sticky=W)
+    entry_email = ttk.Entry(frm, width=25)
     entry_email.grid(column=1, row=0)
 
-    ttk.Label(parents_window, text="Password:").grid(column=0, row=1, sticky=W)
-    entry_password = ttk.Entry(parents_window, width=25, show="*")
+    ttk.Label(frm, text="Password:").grid(column=0, row=1, sticky=W)
+    entry_password = ttk.Entry(frm, width=25, show="*")
     entry_password.grid(column=1, row=1)
 
-    ttk.Label(parents_window, text="Name:").grid(column=0, row=2, sticky=W)
-    entry_name = ttk.Entry(parents_window, width=25)
+    ttk.Label(frm, text="Name:").grid(column=0, row=2, sticky=W)
+    entry_name = ttk.Entry(frm, width=25)
     entry_name.grid(column=1, row=2)
 
-    ttk.Label(parents_window, text="Last Name:").grid(column=0, row=3, sticky=W)
-    entry_last_name = ttk.Entry(parents_window, width=25)
+    ttk.Label(frm, text="Last Name:").grid(column=0, row=3, sticky=W)
+    entry_last_name = ttk.Entry(frm, width=25)
     entry_last_name.grid(column=1, row=3)
 
-    ttk.Label(parents_window, text="Phone:").grid(column=0, row=4, sticky=W)
-    entry_phone = ttk.Entry(parents_window, width=25)
+    ttk.Label(frm, text="Phone:").grid(column=0, row=4, sticky=W)
+    entry_phone = ttk.Entry(frm, width=25)
     entry_phone.grid(column=1, row=4)
 
     def save_parent_info():
@@ -196,14 +216,14 @@ def register_parent(parent_window):
             conn.close()
 
     # Call to registration:
-    ttk.Button(parents_window, text="Register", width=25, command=save_parent_info).grid(column=1, row=5, sticky=W)
+    ttk.Button(frm, text="Register", width=25, command=save_parent_info).grid(column=1, row=5, sticky=W)
 
     # Call to exit:
     def close_parents_window(window, parent_window):
         window.destroy()
         parent_window.deiconify() 
     
-    ttk.Button(parents_window, text="Logout", width=25, command=lambda:close_parents_window(parents_window, parent_window)).grid(column=1, row=6, sticky=W)
+    ttk.Button(frm, text="Logout", width=25, command=lambda:close_parents_window(parents_window, parent_window)).grid(column=1, row=6, sticky=W)
 
     parents_window.protocol("WM_DELETE_WINDOW", lambda:close_parents_window(parents_window, parent_window))
     parents_window.grab_set()
@@ -215,15 +235,25 @@ def register_student(parent_window):
     parent_window.withdraw()
     student_window  = Toplevel(parent_window)
     student_window .title("Student Registration")
-    student_window .geometry("600x600")
+    student_window .geometry("400x300")
+
+    # Make a 2×2 grid on the root of this window
+    student_window.grid_rowconfigure(0, weight=1)
+    student_window.grid_rowconfigure(2, weight=1)
+    student_window.grid_columnconfigure(0, weight=1)
+    student_window.grid_columnconfigure(2, weight=1)
+
+    # Center frame
+    frm = ttk.Frame(student_window, padding=20)
+    frm.grid(row=1, column=1, sticky="nsew")
 
     # Make the window resizable
-    student_window.grid_rowconfigure(0, weight=1)
-    student_window.grid_columnconfigure(0, weight=1)
+    frm.grid_rowconfigure(0, weight=1)
+    frm.grid_columnconfigure(0, weight=1)
 
     # Create a scrollable frame
-    canvas = Canvas(student_window)
-    scrollbar = Scrollbar(student_window, orient="vertical", command=canvas.yview)
+    canvas = Canvas(frm)
+    scrollbar = Scrollbar(frm, orient="vertical", command=canvas.yview)
     scroll_frame = Frame(canvas)
 
     scroll_frame.bind(
@@ -379,25 +409,35 @@ def register_bus(parent_window):
     bus_window .title("Bus Registration")
     bus_window .geometry("400x300")
 
+    # Make a 2×2 grid on the root of this window
+    bus_window.grid_rowconfigure(0, weight=1)
+    bus_window.grid_rowconfigure(2, weight=1)
+    bus_window.grid_columnconfigure(0, weight=1)
+    bus_window.grid_columnconfigure(2, weight=1)
+
+    # Center frame
+    frm = ttk.Frame(bus_window, padding=20)
+    frm.grid(row=1, column=1, sticky="nsew")
+
     # Inputs for buses registration:
-    ttk.Label(bus_window, text="Plate:").grid(column=0, row=0, sticky=W)
-    entry_bus_plate = ttk.Entry(bus_window, width=25)
+    ttk.Label(frm, text="Plate:").grid(column=0, row=0, sticky=W)
+    entry_bus_plate = ttk.Entry(frm, width=25)
     entry_bus_plate.grid(column=1, row=0)
 
-    ttk.Label(bus_window, text="Driver Name:").grid(column=0, row=1, sticky=W)
-    entry_driver_name = ttk.Entry(bus_window, width=25)
+    ttk.Label(frm, text="Driver Name:").grid(column=0, row=1, sticky=W)
+    entry_driver_name = ttk.Entry(frm, width=25)
     entry_driver_name.grid(column=1, row=1)
 
-    ttk.Label(bus_window, text="Driver Phone:").grid(column=0, row=2, sticky=W)
-    entry_driver_phone = ttk.Entry(bus_window, width=25)
+    ttk.Label(frm, text="Driver Phone:").grid(column=0, row=2, sticky=W)
+    entry_driver_phone = ttk.Entry(frm, width=25)
     entry_driver_phone.grid(column=1, row=2)
 
-    ttk.Label(bus_window, text="Attendant Name:").grid(column=0, row=3, sticky=W)
-    entry_attendant_name = ttk.Entry(bus_window, width=25)
+    ttk.Label(frm, text="Attendant Name:").grid(column=0, row=3, sticky=W)
+    entry_attendant_name = ttk.Entry(frm, width=25)
     entry_attendant_name.grid(column=1, row=3)
 
-    ttk.Label(bus_window, text="Attendant Phone:").grid(column=0, row=4, sticky=W)
-    entry_attendant_phone = ttk.Entry(bus_window, width=25)
+    ttk.Label(frm, text="Attendant Phone:").grid(column=0, row=4, sticky=W)
+    entry_attendant_phone = ttk.Entry(frm, width=25)
     entry_attendant_phone.grid(column=1, row=4)
 
     def save_bus_info():
@@ -438,14 +478,14 @@ def register_bus(parent_window):
         finally:
             conn.close()
 
-    ttk.Button(bus_window, text="Register", width=25, command=save_bus_info).grid(column=1, row=5, sticky=W)
+    ttk.Button(frm, text="Register", width=25, command=save_bus_info).grid(column=1, row=5, sticky=W)
 
     # Call to exit:
     def close_student_window(window,parent_window):
         window.destroy()
         parent_window.deiconify() 
     
-    ttk.Button(bus_window, text="Logout", width=25, command=lambda:close_student_window(bus_window, parent_window)).grid(column=1, row=6, sticky=W)
+    ttk.Button(frm, text="Logout", width=25, command=lambda:close_student_window(bus_window, parent_window)).grid(column=1, row=6, sticky=W)
 
     bus_window.protocol("WM_DELETE_WINDOW", lambda:close_student_window(bus_window, parent_window))
     bus_window.grab_set()
@@ -453,29 +493,61 @@ def register_bus(parent_window):
     bus_window.wait_window()
 
 # View trips
-def view_trips():
-    pass
+def view_trips(parent_window):
+    parent_window.withdraw()
+    bus_window  = Toplevel(parent_window)
+    bus_window .title("Bus Registration")
+    bus_window .geometry("400x300")
+
+    # Make a 2×2 grid on the root of this window
+    bus_window.grid_rowconfigure(0, weight=1)
+    bus_window.grid_rowconfigure(2, weight=1)
+    bus_window.grid_columnconfigure(0, weight=1)
+    bus_window.grid_columnconfigure(2, weight=1)
+
+    # Center frame
+    frm = ttk.Frame(bus_window, padding=20)
+    frm.grid(row=1, column=1, sticky="nsew")
+
+    # Inputs for buses registration:
+    ttk.Label(frm, text="Plate:").grid(column=0, row=0, sticky=W)
+    entry_bus_plate = ttk.Entry(frm, width=25)
+    entry_bus_plate.grid(column=1, row=0)
 
 # Create window tkinter
 def run_main():
     root = Tk()
     root.title("MyShuddle User Administrator")
-    root.geometry("300x200")
+    root.geometry("500x300")
 
-    frm = ttk.Frame(root, padding=20)
-    frm.grid()
+    # Make root expandable
+    root.grid_rowconfigure(0, weight=1)   
+    root.grid_columnconfigure(0, weight=1)  
+
+    frm = ttk.Frame(root, padding=50)
+    frm.grid(row=0, column=0)
+
+    # Make frm expandable so content centers
+    frm.grid_rowconfigure(0, weight=1)
+    frm.grid_rowconfigure(1, weight=1)
+    frm.grid_columnconfigure(0, weight=1)
+    frm.grid_columnconfigure(1, weight=1)
+
+    # Inner frame for login form
+    login_box = ttk.Frame(frm, padding=20)
+    login_box.grid(row=1, column=1)  # center cell of frm
 
     # Create inputs for log in
-    ttk.Label(frm, text="Email:").grid(column=0, row=0, sticky=W)
-    entry_user = ttk.Entry(frm, width=25)
-    entry_user.grid(column=1, row=0) 
+    ttk.Label(login_box, text="Email:").grid(column=0, row=0, sticky=W, pady=5)
+    entry_user = ttk.Entry(login_box, width=25)
+    entry_user.grid(column=1, row=0, pady=5)
 
-    ttk.Label(frm, text="Password:").grid(column=0, row=1, sticky=W)
-    entry_pass = ttk.Entry(frm, show="*", width=25)
-    entry_pass.grid(column=1, row=1)
+    ttk.Label(login_box, text="Password:").grid(column=0, row=1, sticky=W, pady=5)
+    entry_pass = ttk.Entry(login_box, show="*", width=25)
+    entry_pass.grid(column=1, row=1, pady=5)
 
-    ttk.Button(frm, text="Login", command=lambda: login(root, entry_user, entry_pass)).grid(column=1, row=2, pady=5)
-    ttk.Button(frm, text="Logout", command=root.destroy).grid(column=1, row=3)
+    ttk.Button(login_box, text="Login", command=lambda: login(root, entry_user, entry_pass)).grid(column=0, row=2, columnspan=2, pady=10)
+    ttk.Button(login_box, text="Logout", command=root.destroy).grid(column=0, row=3, columnspan=2, pady=5)
 
     root.mainloop()
 
