@@ -41,6 +41,14 @@ cursor = conn.cursor()
 
 # Create tables
 cursor.execute("""
+CREATE TABLE IF NOT EXISTS schools (
+    school_phone VARCHAR(20) PRIMARY KEY,
+    school_name VARCHAR(150) NOT NULL,
+    school_address VARCHAR(255)
+);
+""")
+
+cursor.execute("""
 CREATE TABLE IF NOT EXISTS parents (
     email VARCHAR(100) PRIMARY KEY,
     password VARCHAR(100),
@@ -57,7 +65,9 @@ CREATE TABLE IF NOT EXISTS students (
     first_name VARCHAR(100),
     last_name VARCHAR(100),
     birth_date DATE,
-    FOREIGN KEY (parent_email) REFERENCES parents(email)
+    school_phone VARCHAR(20),
+    FOREIGN KEY (parent_email) REFERENCES parents(email),
+    FOREIGN KEY (school_phone) REFERENCES schools(school_phone)
 );
 """)
 
@@ -75,9 +85,12 @@ cursor.execute("""
 CREATE TABLE IF NOT EXISTS trips (
     trip_id INT AUTO_INCREMENT PRIMARY KEY,
     plate VARCHAR(20),
+    school_phone VARCHAR(20),
     trip_date DATE,
-    FOREIGN KEY (plate) REFERENCES buses(plate)
-    # Should I add the students list?
+    departure_time TIME,
+    arrival_time TIME,
+    FOREIGN KEY (plate) REFERENCES buses(plate),
+    FOREIGN KEY (school_phone) REFERENCES schools(school_phone)
 )
 """)
 

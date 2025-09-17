@@ -35,11 +35,12 @@ def open_admin_dashboard(root):
     dashboard_window.geometry("400x300")
 
     Label(dashboard_window, text="MyShuddle Admin Panel", font=("Arial", 14, "bold")).pack(pady=10)
+    Button(dashboard_window, text="Register School", width=20, command=lambda:register_school(dashboard_window)).pack(pady=5)
     Button(dashboard_window, text="Register Parent", width=20, command=lambda:register_parent(dashboard_window)).pack(pady=5)
     Button(dashboard_window, text="Register Student", width=20, command=lambda: register_student(dashboard_window)).pack(pady=5)
     Button(dashboard_window, text="Register Bus", width=20, command=lambda: register_bus(dashboard_window)).pack(pady=5)
     Button(dashboard_window, text="View Trips", width=20, command=view_trips).pack(pady=5)
-    Button(dashboard_window, text="Logout", width=20, command=lambda: on_close_dashboard(dashboard_window, root)).pack(pady=20)
+    Button(dashboard_window, text="Logout", width=20, command=lambda: on_close_dashboard(dashboard_window,root)).pack(pady=20)
     
     def on_close_dashboard(window, root):
         window.destroy()
@@ -58,6 +59,75 @@ def login(root, entry_user, entry_pass):
         open_admin_dashboard(root)
     else:
         messagebox.showerror("Login Failed", "Invalid admin credentials.")
+
+# Register School
+def register_school(parent_window):
+    parent_window.withdraw()
+    school_window = Toplevel(parent_window)
+    school_window.title("School Registration")
+    school_window.geometry("400x300")
+
+    # Inputs for parent registration:
+    ttk.Label(school_window, text="Phone Number:").grid(column=0, row=0, sticky=W)
+    entry_school_phone= ttk.Entry(school_window, width=25)
+    entry_school_phone.grid(column=1, row=0)
+
+    ttk.Label(school_window, text="School Name:").grid(column=0, row=1, sticky=W)
+    entry_school_name = ttk.Entry(school_window, width=25)
+    entry_school_name.grid(column=1, row=1)
+
+    ttk.Label(school_window, text="Address:").grid(column=0, row=2, sticky=W)
+    entry_school_address = ttk.Entry(school_window, width=25)
+    entry_school_address.grid(column=1, row=2)
+
+    def save_school_info():
+        # Clean information
+        school_phone = entry_school_phone.get().strip()
+        school_name = entry_school_name.get().strip()
+        school_address = entry_school_address.get().strip()
+
+        if not school_phone or not school_name or not school_address:
+            messagebox.showerror("Error", "All fields are required.")
+            return
+
+        conn = connect_db()
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("""
+                INSERT INTO schools (school_phone, school_name, school_address)
+                VALUES (%s, %s, %s)
+                """, (school_phone, school_name, school_address))
+
+            conn.commit()
+            messagebox.showinfo("Success", f"Parent {school_name} registered successfully!")
+
+            # Clear fields after success
+            entry_school_name.delete(0, END)
+            entry_school_address.delete(0, END)
+            entry_school_phone.delete(0, END)
+
+        except mysql.connector.IntegrityError:
+            messagebox.showerror("Error", f"School {school_name} already exists.")
+        except mysql.connector.Error as err:
+            messagebox.showerror("Database Error", str(err))
+        finally:
+            conn.close()
+
+    # Call to registration:
+    ttk.Button(school_window, text="Register", width=25, command=save_school_info).grid(column=1, row=5, sticky=W)
+
+    # Call to exit:
+    def close_school_window(window, parent_window):
+        window.destroy()
+        parent_window.deiconify() 
+    
+    ttk.Button(school_window, text="Logout", width=25, command=lambda:close_school_window(school_window, parent_window)).grid(column=1, row=6, sticky=W)
+
+    school_window.protocol("WM_DELETE_WINDOW", lambda:close_school_window(school_window, parent_window))
+    school_window.grab_set()
+    school_window.focus_force()
+    school_window.wait_window()
 
 # Register Parent
 def register_parent(parent_window):
@@ -129,13 +199,13 @@ def register_parent(parent_window):
     ttk.Button(parents_window, text="Register", width=25, command=save_parent_info).grid(column=1, row=5, sticky=W)
 
     # Call to exit:
-    def close_parents_window():
-        parents_window.destroy()
+    def close_parents_window(window, parent_window):
+        window.destroy()
         parent_window.deiconify() 
     
-    ttk.Button(parents_window, text="Logout", width=25, command=close_parents_window).grid(column=1, row=6, sticky=W)
+    ttk.Button(parents_window, text="Logout", width=25, command=lambda:close_parents_window(parents_window, parent_window)).grid(column=1, row=6, sticky=W)
 
-    parents_window.protocol("WM_DELETE_WINDOW", close_parents_window)
+    parents_window.protocol("WM_DELETE_WINDOW", lambda:close_parents_window(parents_window, parent_window))
     parents_window.grab_set()
     parents_window.focus_force()
     parents_window.wait_window()
@@ -160,6 +230,25 @@ def register_student(parent_window):
     entry_student_last_name = ttk.Entry(student_window, width=25)
     entry_student_last_name.grid(column=1, row=2)
     
+    # --- School selection (ComboBox) ---
+    ttk.Label(student_window, text="School:").grid(column=0, row=3, sticky=W)
+    school_var = StringVar()
+    combo_school = ttk.Combobox(student_window, textvariable=school_var, width=25, state="readonly")
+    combo_school.grid(column=1, row=3)
+
+    # Load schools from DB
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT school_id, name FROM schools")
+    schools = cursor.fetchall()
+    conn.close()
+
+    school_map = {name: school_id for school_id, name in schools}  # map name -> id
+    combo_school['values'] = list(school_map.keys())
+    if combo_school['values']:
+        combo_school.current(0)  # select default 0
+
+    # --- Birthday selection Modal ---
     selected_date_var = StringVar(value="No date selected")
     
     def select_birth_date():
@@ -182,10 +271,9 @@ def register_student(parent_window):
         ttk.Button(birthday_window, text="Save date", command=save_date).pack(pady=10)
         birthday_window.transient(student_window)  
         birthday_window.grab_set()  
-        student_window.wait_window(birthday_window)
-
-    ttk.Button(student_window, text="Select Birth Date", command=select_birth_date).grid(column=0, row=3, sticky=W)
-    ttk.Label(student_window, textvariable=selected_date_var).grid(column=1, row=3, sticky=W)
+        
+    ttk.Button(student_window, text="Select Birth Date", command=select_birth_date).grid(column=0, row=4, sticky=W)
+    ttk.Label(student_window, textvariable=selected_date_var).grid(column=1, row=4, sticky=W)
 
     def save_student_info():
         # Clean information
@@ -193,11 +281,13 @@ def register_student(parent_window):
         name = entry_student_name.get().strip()
         last_name = entry_student_last_name.get().strip()
         birth_day = selected_date_var.get().strip()
+        school_name = school_var.get().strip()
 
-
-        if not parent_email or not name or not last_name or not birth_day :
+        if not parent_email or not name or not last_name or not birth_day or not school_name:
             messagebox.showerror("Error", "All fields are required.")
             return
+        
+        school_id = school_map.get(school_name)  # get ID from school
 
         conn = connect_db()
         cursor = conn.cursor()
@@ -211,9 +301,9 @@ def register_student(parent_window):
                 return
                 
             cursor.execute("""
-                INSERT INTO students (parent_email, first_name, last_name, birth_date)
-                VALUES (%s, %s, %s, %s)
-                """, (parent_email, name, last_name, birth_day))
+                INSERT INTO students (parent_email, first_name, last_name, birth_date, school_id)
+                VALUES (%s, %s, %s, %s, %s)
+                """, (parent_email, name, last_name, birth_day,school_id))
 
             conn.commit()
 
@@ -255,6 +345,7 @@ def register_student(parent_window):
             entry_student_name.delete(0, END)
             entry_student_last_name.delete(0, END)
             selected_date_var.set("No date selected")
+            school_var.set("No school selected")
 
         except mysql.connector.Error as err:
             messagebox.showerror("Database Error", str(err))
@@ -262,16 +353,16 @@ def register_student(parent_window):
             conn.close()
 
     # Call to registration:
-    ttk.Button(student_window, text="Register", width=25, command=save_student_info).grid(column=1, row=4, sticky=W)
+    ttk.Button(student_window, text="Register", width=25, command=save_student_info).grid(column=1, row=7, sticky=W)
 
     # Call to exit:
-    def close_student_window():
-        student_window.destroy()
+    def close_student_window(window,parent_window):
+        window.destroy()
         parent_window.deiconify() 
     
-    ttk.Button(student_window, text="Logout", width=25, command=close_student_window).grid(column=1, row=7, sticky=W)
+    ttk.Button(student_window, text="Logout", width=25, command=lambda:close_student_window(student_window, parent_window)).grid(column=1, row=8, sticky=W)
 
-    student_window.protocol("WM_DELETE_WINDOW", close_student_window)
+    student_window.protocol("WM_DELETE_WINDOW", lambda:close_student_window(student_window, parent_window))
     student_window.grab_set()
     student_window.focus_force()
     student_window.wait_window()
@@ -345,13 +436,13 @@ def register_bus(parent_window):
     ttk.Button(bus_window, text="Register", width=25, command=save_bus_info).grid(column=1, row=5, sticky=W)
 
     # Call to exit:
-    def close_student_window():
-        bus_window.destroy()
+    def close_student_window(window,parent_window):
+        window.destroy()
         parent_window.deiconify() 
     
-    ttk.Button(bus_window, text="Logout", width=25, command=close_student_window).grid(column=1, row=6, sticky=W)
+    ttk.Button(bus_window, text="Logout", width=25, command=lambda:close_student_window(bus_window, parent_window)).grid(column=1, row=6, sticky=W)
 
-    bus_window.protocol("WM_DELETE_WINDOW", close_student_window)
+    bus_window.protocol("WM_DELETE_WINDOW", lambda:close_student_window(bus_window, parent_window))
     bus_window.grab_set()
     bus_window.focus_force()
     bus_window.wait_window()
