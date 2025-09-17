@@ -495,18 +495,18 @@ def register_bus(parent_window):
 # View trips
 def view_trips(parent_window):
     parent_window.withdraw()
-    bus_window  = Toplevel(parent_window)
-    bus_window .title("Bus Registration")
-    bus_window .geometry("400x300")
+    trips_window = Toplevel(parent_window)
+    trips_window .title("Bus Registration")
+    trips_window .geometry("400x300")
 
     # Make a 2×2 grid on the root of this window
-    bus_window.grid_rowconfigure(0, weight=1)
-    bus_window.grid_rowconfigure(2, weight=1)
-    bus_window.grid_columnconfigure(0, weight=1)
-    bus_window.grid_columnconfigure(2, weight=1)
+    trips_window.grid_rowconfigure(0, weight=1)
+    trips_window.grid_rowconfigure(2, weight=1)
+    trips_window.grid_columnconfigure(0, weight=1)
+    trips_window.grid_columnconfigure(2, weight=1)
 
     # Center frame
-    frm = ttk.Frame(bus_window, padding=20)
+    frm = ttk.Frame(trips_window, padding=20)
     frm.grid(row=1, column=1, sticky="nsew")
 
     # Inputs for buses registration:
