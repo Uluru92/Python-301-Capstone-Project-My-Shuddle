@@ -3,7 +3,7 @@ from tkinter import ttk
 from tkcalendar import DateEntry
 from tkinter import messagebox
 from PIL import Image, ImageTk
-import mysql.connector, qrcode, json, os
+import mysql.connector, qrcode, json, os, datetime
 from dotenv import load_dotenv
 
 # Admin user Tkinter
@@ -496,8 +496,8 @@ def register_bus(parent_window):
 def view_trips(parent_window):
     parent_window.withdraw()
     trips_window = Toplevel(parent_window)
-    trips_window .title("Bus Registration")
-    trips_window .geometry("400x300")
+    trips_window.title("Show Trips")
+    trips_window.geometry("600x400")
 
     # Make a 2×2 grid on the root of this window
     trips_window.grid_rowconfigure(0, weight=1)
@@ -509,10 +509,77 @@ def view_trips(parent_window):
     frm = ttk.Frame(trips_window, padding=20)
     frm.grid(row=1, column=1, sticky="nsew")
 
-    # Inputs for buses registration:
-    ttk.Label(frm, text="Plate:").grid(column=0, row=0, sticky=W)
-    entry_bus_plate = ttk.Entry(frm, width=25)
-    entry_bus_plate.grid(column=1, row=0)
+    # --- Date filter ---
+    ttk.Label(frm, text="Select Trip Date:").grid(column=0, row=0, sticky=W, pady=5)
+    date_var = StringVar(value=datetime.now().strftime("%Y-%m-%d"))
+    date_entry = DateEntry(frm, textvariable=date_var, date_pattern="yyyy-mm-dd")
+    date_entry.grid(column=1, row=0, pady=5)
+
+    # --- Status filter ---
+    ttk.Label(frm, text="Select Trip Status:").grid(column=0, row=1, sticky=W, pady=5)
+    status_var = StringVar()
+    combo_status = ttk.Combobox(frm, textvariable=status_var, state="readonly", width=20)
+    combo_status.grid(column=1, row=1, pady=5)
+
+    # Inicializar valores según fecha (por defecto: hoy)
+    def update_status_options(*args):
+        selected_date = date_var.get()
+        today = datetime.now().strftime("%Y-%m-%d")
+        if selected_date < today:  # fecha pasada
+            combo_status['values'] = ("absent", "dropped_off")
+        else:  # fecha actual o futura
+            combo_status['values'] = ("onboard", "absent", "dropped_off")
+        combo_status.current(0)
+
+    date_var.trace("w", update_status_options)
+    update_status_options()  # ejecutar inicial
+
+    # --- Treeview to display results ---
+    columns = ("trip_id", "plate", "school_phone", "trip_date", "departure", "arrival", "student_id")
+    tree = ttk.Treeview(frm, columns=columns, show="headings", height=10)
+    for col in columns:
+        tree.heading(col, text=col)
+        tree.column(col, width=100)
+    tree.grid(column=0, row=3, columnspan=2, pady=10)
+
+    def load_trips():
+        selected_status = status_var.get()
+        selected_date = date_var.get()
+
+        conn = connect_db()
+        cursor = conn.cursor()
+        query = """
+            SELECT t.trip_id, t.plate, t.school_phone, t.trip_date, t.departure_time, t.arrival_time, ts.student_id
+            FROM trips t
+            JOIN trip_students ts ON t.trip_id = ts.trip_id
+            WHERE ts.status = %s AND t.trip_date = %s
+        """
+        cursor.execute(query, (selected_status, selected_date))
+        rows = cursor.fetchall()
+        conn.close()
+
+        # Clear existing rows
+        for row in tree.get_children():
+            tree.delete(row)
+
+        # Insert new rows
+        for r in rows:
+            tree.insert("", "end", values=r)
+
+    # Button to fetch trips
+    ttk.Button(frm, text="View Trips", command=load_trips).grid(column=1, row=2, pady=5, sticky=E)
+
+    # Exit button
+    def close_trips_window(window, parent_window):
+        window.destroy()
+        parent_window.deiconify()
+
+    ttk.Button(frm, text="Close", command=lambda: close_trips_window(trips_window, parent_window)).grid(column=1, row=4, pady=10, sticky=E)
+
+    trips_window.protocol("WM_DELETE_WINDOW", lambda: close_trips_window(trips_window, parent_window))
+    trips_window.grab_set()
+    trips_window.focus_force()
+    trips_window.wait_window()
 
 # Create window tkinter
 def run_main():
