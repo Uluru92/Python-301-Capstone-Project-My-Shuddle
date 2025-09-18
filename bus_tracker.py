@@ -1,10 +1,13 @@
 import tkinter as tk
 from tkhtmlview import HTMLLabel
-import folium
-import io
+import folium,io,threading, os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import threading
+from dotenv import load_dotenv
+
+# Get passwords and secret stuff from .env
+load_dotenv()
+NGROK_URL = os.getenv("NGROK_URL")
 
 # -------------------- Backend Flask --------------------
 app = Flask(__name__)
@@ -12,8 +15,7 @@ CORS(app)  # habilita CORS para que el navegador pueda enviar POST
 coords_list = []  # Lista de dicts: {'bus_id', 'lat', 'lng', 'timestamp'}
 
 # Public ngrok URL - Needs to be updated every 8 hours or so
-PUBLIC_URL = "https://8e37d919c96a.ngrok-free.app"
-print("🌍 Usando URL pública:", PUBLIC_URL)
+print("🌍 Usando URL pública:", NGROK_URL)
 
 @app.route("/")
 def home():
