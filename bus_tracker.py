@@ -1,6 +1,7 @@
 import os
 import json
-import datetime
+from datetime import datetime
+import pytz
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -24,7 +25,7 @@ def start_new_trip(bus_id="bus123"):
     global current_trip_file, coords_list, trip_in_progress
     coords_list = []
     os.makedirs("trips", exist_ok=True)
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     current_trip_file = f"trips/trip_{bus_id}_{timestamp}.json"
     trip_in_progress = True
     print("🚍 Nuevo viaje iniciado:", current_trip_file)
@@ -102,7 +103,7 @@ def stop_trip():
 
 @app.route("/location", methods=["POST"])
 def location():
-    """Agrega coordenadas al viaje en curso"""
+    """Agrega coordenadas al viaje en curso con hora local de Costa Rica"""
     global coords_list, trip_in_progress
     if not trip_in_progress:
         return jsonify({"status": "error", "message": "No hay viaje en curso"}), 400
@@ -112,10 +113,17 @@ def location():
     if not data or not required_keys.issubset(data.keys()):
         return jsonify({"status": "error", "message": "Faltan datos"}), 400
 
+    # Generar timestamp en hora de Costa Rica
+    cr_tz = pytz.timezone("America/Costa_Rica")
+    timestamp_cr = datetime.now(cr_tz).isoformat()
+    
+    # Agregar timestamp correcto al diccionario
+    data["timestamp"] = timestamp_cr
+
     coords_list.append(data)
     save_current_trip()  # Guardar en JSON
 
-    print(f"Latitude: {data['lat']} Longitude: {data['lng']}")
+    print(f"Latitude: {data['lat']} Longitude: {data['lng']} Time: {data['timestamp']}")
     return jsonify({"status": "ok"}), 200
 
 @app.route("/map")
