@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyShuddle Tracker</title>
+</head>
+<body>
+    <h1>MyShuddle Tracker</h1>
+
+    <button id="scanQRBtn">Scan Students QR</button>
+    <button id="startBtn" disabled>Start Trip</button>
+    <button id="stopBtn" disabled>Stop Trip</button>
+
+    <script>
+        const NGROK_URL = "{{ ngrok_url }}";
+
+        const backendStartUrl = `${NGROK_URL}/start_trip`;
+        const backendLocationUrl = `${NGROK_URL}/location`;
+        const backendStopUrl = `${NGROK_URL}/stop_trip`;
+        const backendBoardUrl = `${NGROK_URL}/board_student`;
+
+        let trackingInterval = null;
+
+        // --- Scan QR ---
+        
+        document.getElementById("scanQRBtn").addEventListener("click", async () => {
+            try {
+                // Leer desde el portapapeles
+                const text = await navigator.clipboard.readText();
+                const studentData = JSON.parse(text);
+
+                // Validar que tenga las claves necesarias (MVP)
+                const requiredKeys = ["student_id", "name", "parent_email", "birth_date"];
+                const hasAllKeys = requiredKeys.every(key => studentData.hasOwnProperty(key));
+                if (!hasAllKeys) throw new Error("Datos incompletos en el clipboard");
+
+                // Enviar al backend
+                const res = await fetch(backendBoardUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(studentData)
+                });
+
+                const data = await res.json();
+                if (data.status !== "ok") throw new Error(data.message);
+
+                alert(`${studentData.name} registrado en la buseta.`);
+                console.log("Student boarded:", data);
+
+                // Habilitar Start Trip
+                document.getElementById("startBtn").disabled = false;
+
+            } catch (err) {
+                alert("Error al registrar estudiante: " + err.message);
+                console.error(err);
+            }
+        });
+
+        // --- Start Trip ---
+        document.getElementById("startBtn").addEventListener("click", async () => {
+            try {
+                const res = await fetch(backendStartUrl, { method: "POST" });
+                const data = await res.json();
+                if (data.status !== "ok") throw new Error(data.message);
+
+                alert("Trip started!");
+                document.getElementById("startBtn").disabled = true;
+                document.getElementById("stopBtn").disabled = false;
+
+                const sendLocation = (pos) => {
+                    const locationData = {
+                        bus_id: "bus123",
+                        lat: pos.coords.latitude,
+                        lng: pos.coords.longitude,
+                        timestamp: new Date().toISOString()
+                    };
+                    fetch(backendLocationUrl, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(locationData)
+                    }).then(res => res.json())
+                      .then(r => console.log("Server response:", r))
+                      .catch(err => console.error("Error sending location:", err));
+                };
+
+                navigator.geolocation.getCurrentPosition(sendLocation);
+                trackingInterval = setInterval(() => {
+                    navigator.geolocation.getCurrentPosition(sendLocation);
+                }, 30000);
+
+            } catch (err) {
+                alert("Error starting trip: " + err.message);
+            }
+        });
+
+        // --- Stop Trip ---
+        document.getElementById("stopBtn").addEventListener("click", async () => {
+            try {
+                const res = await fetch(backendStopUrl, { method: "POST" });
+                const data = await res.json();
+                if (data.status !== "ok") throw new Error(data.message);
+
+                alert("Trip stopped!");
+                clearInterval(trackingInterval);
+                trackingInterval = null;
+
+                document.getElementById("startBtn").disabled = false;
+                document.getElementById("stopBtn").disabled = true;
+
+            } catch (err) {
+                alert("Error stopping trip: " + err.message);
+            }
+        });
+    </script>
+</body>
+</html>

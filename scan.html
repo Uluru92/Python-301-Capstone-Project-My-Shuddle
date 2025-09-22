@@ -1,0 +1,21 @@
+<script>
+    async function sendStudent() {
+        const raw = document.getElementById("qrData").value;
+        document.getElementById("qrData").value = ""; // limpia la caja
+        try {
+            const student = JSON.parse(raw);
+
+            const response = await fetch("/board_student", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(student)
+            });
+
+            const result = await response.json();
+            document.getElementById("result").innerText = result.message;
+
+        } catch (err) {
+            document.getElementById("result").innerText = "❌ QR inválido (JSON no válido)";
+        }
+    }
+</script>
