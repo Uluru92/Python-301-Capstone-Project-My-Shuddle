@@ -5,26 +5,59 @@ import pytz
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from dotenv import load_dotenv
+import mysql.connector
+from mysql.connector import Error
 
 # -------------------- Config --------------------
 load_dotenv()
 NGROK_URL = os.getenv("NGROK_URL")
+MYSQL_USER = os.getenv("MYSQL_USER")
+MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD")
+MYSQL_HOST = os.getenv("MYSQL_HOST")
+MYSQL_PORT = os.getenv("MYSQL_PORT")
+MYSQL_DB_MYSHUDDLE = os.getenv("MYSQL_DB_MYSHUDDLE")
 
 # Variables globales to scan QRs and keep wich students are in board
 boarded_students = []
+current_trip_id = None   # ID del viaje en curso
 
 # Variables globales to save every route after tracking bus
 coords_list = []
 current_trip_file = None
 trip_in_progress = False
 
-
 # -------------------- Helpers --------------------
+def get_db_connection():
+    try:
+        return mysql.connector.connect(
+            host=MYSQL_HOST,
+            user=MYSQL_USER,
+            password=MYSQL_PASSWORD,
+            database=MYSQL_DB_MYSHUDDLE,
+            port=int(MYSQL_PORT) if MYSQL_PORT else 3306
+        )
+    except Error as e:
+        print("Error al conectar a la base de datos:", e)
+        return None
+    
 def start_new_trip(bus_id="bus123"):
     """Inicia un nuevo viaje y crea un archivo JSON único"""
-    global current_trip_file, coords_list, trip_in_progress
+    global current_trip_file, coords_list, trip_in_progress, current_trip_id
     coords_list = []
     os.makedirs("trips", exist_ok=True)
+
+    # Conectar a DB y crear viaje
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO trips (bus_id, start_time) VALUES (%s, NOW())
+    """, (bus_id,))
+    conn.commit()
+    
+    # Obtener el trip_id generado
+    current_trip_id = cur.lastrowid
+    conn.close()
+
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     current_trip_file = f"trips/trip_{bus_id}_{timestamp}.json"
     trip_in_progress = True
@@ -57,33 +90,33 @@ def board_student():
     data = request.get_json()
     required_keys = {"student_id", "name", "parent_email", "birth_date"}
     if not data or not required_keys.issubset(data.keys()):
-        return jsonify({"status": "error", "message": "Datos de estudiante inválidos"}), 400
+        return jsonify({"status": "error", "message": "Datos inválidos"}), 400
 
-    # Verificar si ya está abordado
-    if any(s['student_id'] == data['student_id'] for s in boarded_students):
-        print(f"⚠️ {data['name']} ya estaba registrado")
-        return (
-            jsonify({
-                "status": "ok",
-                "student": data,
-                "message": f"⚠️ {data['name']} ya estaba abordado"
-            }),
-            200,
-            {"Cache-Control": "no-cache, no-store, must-revalidate"}
-        )
+    conn = get_db_connection()
+    cur = conn.cursor()
 
-    # Agregar nuevo estudiante
-    boarded_students.append(data)
+    # Validar si ya existe en trip_students
+    cur.execute("""
+        SELECT * FROM trip_students 
+        WHERE trip_id = %s AND student_id = %s
+    """, (current_trip_id, data["student_id"]))
+    existing = cur.fetchone()
+
+    if existing:
+        conn.close()
+        return jsonify({"status": "ok", "message": f"⚠️ {data['name']} ya estaba registrado"}), 200
+
+    # Insertar en trip_students
+    cur.execute("""
+        INSERT INTO trip_students (trip_id, student_id, status)
+        VALUES (%s, %s, 'onboard')
+    """, (current_trip_id, data["student_id"]))
+    conn.commit()
+    conn.close()
+
     print(f"🎓 {data['name']} boarded the bus")
-    return (
-        jsonify({
-            "status": "ok",
-            "student": data,
-            "message": f"✅ {data['name']} abordó el bus"
-        }),
-        200,
-        {"Cache-Control": "no-cache, no-store, must-revalidate"}
-    )
+    return jsonify({"status": "ok", "message": f"✅ {data['name']} abordó el bus"}), 200
+
 
 @app.route("/start_trip", methods=["POST"])
 def start_trip():
