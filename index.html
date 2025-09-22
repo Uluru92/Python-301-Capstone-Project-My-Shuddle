@@ -19,43 +19,42 @@
 
     // --- Start Trip ---
     document.getElementById("startBtn").addEventListener("click", async () => {
-      try {
-        const res = await fetch(backendStartUrl, { method: "POST" });
-        const data = await res.json();
-        if (data.status !== "ok") throw new Error(data.message);
+        try {
+            const res = await fetch(backendStartUrl, { method: "POST" });
+            const data = await res.json();
+            if (data.status !== "ok") throw new Error(data.message);
 
-        alert("Trip started!");
-        document.getElementById("startBtn").disabled = true;
-        document.getElementById("stopBtn").disabled = false;
+            alert("Trip started!");
+            document.getElementById("startBtn").disabled = true;
+            document.getElementById("stopBtn").disabled = false;
 
-        // Function to send coordinates
-        const sendLocation = (pos) => {
-          const locationData = {
-            bus_id: "bus123",
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-            timestamp: new Date().toISOString()
-          };
-          fetch(backendLocationUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(locationData)
-          }).then(res => res.json())
-            .then(r => console.log("Server response:", r))
-            .catch(err => console.error("Error sending location:", err));
-        };
+            // ✅ Bloquear el botón Scan QR
+            document.getElementById("scanQRBtn").disabled = true;
 
-        // Send initial location immediately
-        navigator.geolocation.getCurrentPosition(sendLocation);
+            const sendLocation = (pos) => {
+                const locationData = {
+                    bus_id: "bus123",
+                    lat: pos.coords.latitude,
+                    lng: pos.coords.longitude,
+                    timestamp: new Date().toISOString()
+                };
+                fetch(backendLocationUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(locationData)
+                }).then(res => res.json())
+                  .then(r => console.log("Server response:", r))
+                  .catch(err => console.error("Error sending location:", err));
+            };
 
-        // Send location every 30s
-        trackingInterval = setInterval(() => {
-          navigator.geolocation.getCurrentPosition(sendLocation);
-        }, 30000);
+            navigator.geolocation.getCurrentPosition(sendLocation);
+            trackingInterval = setInterval(() => {
+                navigator.geolocation.getCurrentPosition(sendLocation);
+            }, 30000);
 
-      } catch (err) {
-        alert("Error starting trip: " + err.message);
-      }
+        } catch (err) {
+            alert("Error starting trip: " + err.message);
+        }
     });
 
     // --- Stop Trip ---
