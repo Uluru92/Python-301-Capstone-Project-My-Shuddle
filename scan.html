@@ -1,21 +1,37 @@
+<input id="qrData" placeholder='Pega aquí JSON del estudiante'>
+<button onclick="sendStudent()">Enviar estudiante</button>
+<p id="result"></p>
+
 <script>
-    async function sendStudent() {
-        const raw = document.getElementById("qrData").value;
-        document.getElementById("qrData").value = ""; // limpia la caja
-        try {
-            const student = JSON.parse(raw);
+async function sendStudent() {
+    const raw = document.getElementById("qrData").value;
+    document.getElementById("qrData").value = ""; // limpia la caja
+    try {
+        const student = JSON.parse(raw);
 
-            const response = await fetch("/board_student", {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify(student)
-            });
-
-            const result = await response.json();
-            document.getElementById("result").innerText = result.message;
-
-        } catch (err) {
-            document.getElementById("result").innerText = "❌ QR inválido (JSON no válido)";
+        // Validar claves mínimas
+        const requiredKeys = ["student_id", "name"];
+        if (!requiredKeys.every(k => student.hasOwnProperty(k))) {
+            throw new Error("JSON incompleto");
         }
+
+        const response = await fetch("/board_student", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(student)
+        });
+
+        const result = await response.json();
+        document.getElementById("result").innerText = result.message;
+
+        // Opcional: si el viaje aún no comenzó, habilitar botón Start Trip
+        if (result.status === "ok") {
+            const startBtn = window.opener?.document.getElementById("startBtn");
+            if (startBtn) startBtn.disabled = false;
+        }
+
+    } catch (err) {
+        document.getElementById("result").innerText = "❌ QR inválido: " + err.message;
     }
+}
 </script>

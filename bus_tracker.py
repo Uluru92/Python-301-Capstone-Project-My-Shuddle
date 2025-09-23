@@ -17,14 +17,12 @@ MYSQL_HOST = os.getenv("MYSQL_HOST")
 MYSQL_PORT = os.getenv("MYSQL_PORT")
 MYSQL_DB_MYSHUDDLE = os.getenv("MYSQL_DB_MYSHUDDLE")
 
-# Variables globales to scan QRs and keep wich students are in board
-boarded_students = []
-current_trip_id = None   # ID del viaje en curso
-
-# Variables globales to save every route after tracking bus
+# Variables globales
+scanned_students = []  
+current_trip_id = None
+trip_in_progress = False
 coords_list = []
 current_trip_file = None
-trip_in_progress = False
 
 # -------------------- Helpers --------------------
 def get_db_connection():
@@ -41,22 +39,10 @@ def get_db_connection():
         return None
     
 def start_new_trip(bus_id="bus123"):
-    """Inicia un nuevo viaje y crea un archivo JSON único"""
-    global current_trip_file, coords_list, trip_in_progress, current_trip_id
+    """Configura el archivo JSON y memoria para el viaje actual"""
+    global current_trip_file, coords_list, trip_in_progress
     coords_list = []
     os.makedirs("trips", exist_ok=True)
-
-    # Conectar a DB y crear viaje
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("""
-        INSERT INTO trips (bus_id, start_time) VALUES (%s, NOW())
-    """, (bus_id,))
-    conn.commit()
-    
-    # Obtener el trip_id generado
-    current_trip_id = cur.lastrowid
-    conn.close()
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     current_trip_file = f"trips/trip_{bus_id}_{timestamp}.json"
@@ -87,35 +73,25 @@ def scan_page():
 
 @app.route("/board_student", methods=["POST"])
 def board_student():
+    global scanned_students
+
     data = request.get_json()
-    required_keys = {"student_id", "name", "parent_email", "birth_date"}
-    if not data or not required_keys.issubset(data.keys()):
-        return jsonify({"status": "error", "message": "Datos inválidos"}), 400
+    student_id = data["student_id"]
+    name = data["name"]
 
-    conn = get_db_connection()
-    cur = conn.cursor()
+    # Verificar si ya está en memoria
+    if any(s["student_id"] == student_id for s in scanned_students):
+        return jsonify({"status": "warning", "message": f"{name} ya está escaneado"}), 200
 
-    # Validar si ya existe en trip_students
-    cur.execute("""
-        SELECT * FROM trip_students 
-        WHERE trip_id = %s AND student_id = %s
-    """, (current_trip_id, data["student_id"]))
-    existing = cur.fetchone()
+    student_entry = {
+        "student_id": student_id,
+        "name": name,
+        "status": "onboard"
+    }
 
-    if existing:
-        conn.close()
-        return jsonify({"status": "ok", "message": f"⚠️ {data['name']} ya estaba registrado"}), 200
-
-    # Insertar en trip_students
-    cur.execute("""
-        INSERT INTO trip_students (trip_id, student_id, status)
-        VALUES (%s, %s, 'onboard')
-    """, (current_trip_id, data["student_id"]))
-    conn.commit()
-    conn.close()
-
-    print(f"🎓 {data['name']} boarded the bus")
-    return jsonify({"status": "ok", "message": f"✅ {data['name']} abordó el bus"}), 200
+    scanned_students.append(student_entry)
+    print(f"🟢 Estudiante {name} registrado en memoria (pre-viaje)")
+    return jsonify({"status": "ok", "student": student_entry})
 
 @app.route("/alight_student", methods=["POST"])
 def alight_student():
@@ -148,12 +124,69 @@ def alight_student():
     print(f"⬇️ Estudiante {student_id} bajó del bus")
     return jsonify({"status": "ok", "message": f"⬇️ Estudiante {student_id} bajó del bus"}), 200
 
-
 @app.route("/start_trip", methods=["POST"])
 def start_trip():
-    # aquí inicializas tu nuevo viaje, archivo .json, etc.
-    start_new_trip()  # tu función que crea el archivo .json vacío
-    return jsonify({"status": "ok"})
+    global current_trip_id, scanned_students, trip_in_progress
+
+    if trip_in_progress:
+        return jsonify({"status": "error", "message": "El viaje ya está en curso"}), 400
+
+    bus_plate = "BUS123"
+    school_phone = "26599085"
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        # Insertar viaje
+        cursor.execute("""
+            INSERT INTO trips (plate, school_phone, trip_date, departure_time)
+            VALUES (%s, %s, CURDATE(), CURTIME())
+        """, (bus_plate, school_phone))
+        current_trip_id = cursor.lastrowid
+
+        # Guardar estudiantes en DB solo con status
+        for s in scanned_students:
+            cursor.execute("""
+                INSERT INTO trip_students (trip_id, student_id, status)
+                VALUES (%s, %s, 'onboard')
+            """, (current_trip_id, s["student_id"]))
+
+        conn.commit()
+        print(f"🚍 Viaje iniciado con {len(scanned_students)} estudiantes (trip_id={current_trip_id})")
+    except Exception as e:
+        conn.rollback()
+        print("Error al iniciar viaje:", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+    # Limpiamos memoria y comenzamos tracking
+    start_new_trip(bus_id=bus_plate)
+    trip_in_progress = True
+    scanned_students = []  # vaciamos memoria pre-viaje
+
+    return jsonify({"status": "ok", "trip_id": current_trip_id, "message": "Viaje iniciado"})
+    
+@app.route("/get_boarded_students", methods=["GET"])
+def get_boarded_students():
+    global current_trip_id, scanned_students
+    if current_trip_id:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT s.student_id, CONCAT(s.first_name,' ',s.last_name) AS name, ts.status
+            FROM trip_students ts
+            JOIN students s ON ts.student_id = s.student_id
+            WHERE ts.trip_id = %s
+        """, (current_trip_id,))
+        students = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return jsonify(students)
+    else:
+        return jsonify(scanned_students)
 
 @app.route("/stop_trip", methods=["POST"])
 def stop_trip():

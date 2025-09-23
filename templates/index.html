@@ -12,46 +12,87 @@
     <button id="startBtn" disabled>Start Trip</button>
     <button id="stopBtn" disabled>Stop Trip</button>
 
+    <h2>Estudiantes a bordo</h2>
+    <div id="studentsList"></div>
+
     <script>
         const NGROK_URL = "{{ ngrok_url }}";
-
         const backendStartUrl = `${NGROK_URL}/start_trip`;
         const backendLocationUrl = `${NGROK_URL}/location`;
         const backendStopUrl = `${NGROK_URL}/stop_trip`;
         const backendBoardUrl = `${NGROK_URL}/board_student`;
 
+        let scannedStudents = [];  
         let trackingInterval = null;
 
-        // --- Scan QR ---
-        
+        // --- Función para actualizar la lista de estudiantes ---
+        async function loadStudents() {
+            const response = await fetch("/get_boarded_students");
+            const students = await response.json();
+
+            const container = document.getElementById("studentsList");
+            container.innerHTML = "";
+
+            const displayStudents = students.length > 0 ? students : scannedStudents;
+
+            if(displayStudents.length === 0){
+                container.innerHTML = "<p>No hay estudiantes a bordo</p>";
+            } else {
+                displayStudents.forEach(student => {
+                    const div = document.createElement("div");
+                    div.innerHTML = `
+                        <button onclick="alightStudent('${student.student_id}')">
+                            ⬇️ ${student.name} - Bajar
+                        </button>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+
+            // Habilitar Start Trip si hay al menos un estudiante y el viaje no comenzó
+            document.getElementById("startBtn").disabled = displayStudents.length === 0;
+        }
+
+        // --- Función para bajar estudiante ---
+        async function alightStudent(studentId) {
+            const response = await fetch("/alight_student", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ student_id: studentId })
+            });
+            const result = await response.json();
+            alert(result.message);
+
+            scannedStudents = scannedStudents.filter(s => s.student_id !== studentId);
+            loadStudents();
+        }
+
+        // --- Escaneo QR ---
         document.getElementById("scanQRBtn").addEventListener("click", async () => {
             try {
-                // Leer desde el portapapeles
                 const text = await navigator.clipboard.readText();
                 const studentData = JSON.parse(text);
 
-                // Validar que tenga las claves necesarias (MVP)
-                const requiredKeys = ["student_id", "name", "parent_email", "birth_date"];
-                const hasAllKeys = requiredKeys.every(key => studentData.hasOwnProperty(key));
-                if (!hasAllKeys) throw new Error("Datos incompletos en el clipboard");
+                const requiredKeys = ["student_id", "name"];
+                if (!requiredKeys.every(k => studentData.hasOwnProperty(k))) {
+                    throw new Error("Datos incompletos en el clipboard");
+                }
 
-                // Enviar al backend
                 const res = await fetch(backendBoardUrl, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(studentData)
                 });
-
                 const data = await res.json();
-                if (data.status !== "ok") throw new Error(data.message);
+                if(data.status !== "ok") throw new Error(data.message);
 
                 alert(`${studentData.name} registrado en la buseta.`);
-                console.log("Student boarded:", data);
+                
+                // Guardar en frontend si no hay viaje activo
+                scannedStudents.push({student_id: studentData.student_id, name: studentData.name});
+                loadStudents();
 
-                // Habilitar Start Trip
-                document.getElementById("startBtn").disabled = false;
-
-            } catch (err) {
+            } catch(err){
                 alert("Error al registrar estudiante: " + err.message);
                 console.error(err);
             }
@@ -65,12 +106,13 @@
                 if (data.status !== "ok") throw new Error(data.message);
 
                 alert("Trip started!");
+
+                // Deshabilitar botones correctamente
                 document.getElementById("startBtn").disabled = true;
+                document.getElementById("scanQRBtn").disabled = true;
                 document.getElementById("stopBtn").disabled = false;
 
-                // ✅ Bloquear Scan QR al iniciar el viaje
-                document.getElementById("scanQRBtn").disabled = true;
-
+                // Enviar coordenadas periódicamente
                 const sendLocation = (pos) => {
                     const locationData = {
                         bus_id: "bus123",
@@ -82,8 +124,8 @@
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(locationData)
-                    }).then(res => res.json())
-                    .then(r => console.log("Server response:", r))
+                    }).then(r => r.json())
+                    .then(res => console.log("Server response:", res))
                     .catch(err => console.error("Error sending location:", err));
                 };
 
@@ -92,7 +134,7 @@
                     navigator.geolocation.getCurrentPosition(sendLocation);
                 }, 30000);
 
-            } catch (err) {
+            } catch(err){
                 alert("Error starting trip: " + err.message);
             }
         });
@@ -102,19 +144,24 @@
             try {
                 const res = await fetch(backendStopUrl, { method: "POST" });
                 const data = await res.json();
-                if (data.status !== "ok") throw new Error(data.message);
+                if(data.status !== "ok") throw new Error(data.message);
 
                 alert("Trip stopped!");
                 clearInterval(trackingInterval);
                 trackingInterval = null;
 
                 document.getElementById("startBtn").disabled = false;
+                document.getElementById("scanQRBtn").disabled = false;
                 document.getElementById("stopBtn").disabled = true;
 
-            } catch (err) {
+            } catch(err){
                 alert("Error stopping trip: " + err.message);
             }
         });
+
+        // Actualizar lista cada 5s
+        setInterval(loadStudents, 5000);
+        loadStudents();
     </script>
 </body>
 </html>
