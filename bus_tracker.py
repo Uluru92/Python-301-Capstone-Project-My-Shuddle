@@ -117,6 +117,37 @@ def board_student():
     print(f"🎓 {data['name']} boarded the bus")
     return jsonify({"status": "ok", "message": f"✅ {data['name']} abordó el bus"}), 200
 
+@app.route("/alight_student", methods=["POST"])
+def alight_student():
+    data = request.get_json()
+    student_id = data.get("student_id")
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Verificar si está onboard
+    cur.execute("""
+        SELECT * FROM trip_students 
+        WHERE trip_id = %s AND student_id = %s AND status = 'onboard'
+    """, (current_trip_id, student_id))
+    student = cur.fetchone()
+
+    if not student:
+        conn.close()
+        return jsonify({"status": "error", "message": "Estudiante no está a bordo"}), 404
+
+    # Actualizar estado
+    cur.execute("""
+        UPDATE trip_students 
+        SET status = 'dropped_off'
+        WHERE trip_id = %s AND student_id = %s
+    """, (current_trip_id, student_id))
+    conn.commit()
+    conn.close()
+
+    print(f"⬇️ Estudiante {student_id} bajó del bus")
+    return jsonify({"status": "ok", "message": f"⬇️ Estudiante {student_id} bajó del bus"}), 200
+
 
 @app.route("/start_trip", methods=["POST"])
 def start_trip():
