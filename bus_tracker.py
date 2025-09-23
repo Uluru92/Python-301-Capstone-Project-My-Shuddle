@@ -191,12 +191,27 @@ def get_boarded_students():
 
 @app.route("/stop_trip", methods=["POST"])
 def stop_trip():
-    global trip_in_progress
-    if not trip_in_progress:
+    global trip_in_progress, current_trip_id
+    if not trip_in_progress or not current_trip_id:
         return jsonify({"status": "error", "message": "No hay viaje en curso"}), 400
 
+    # ✅ Update arrival_time in the DB
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE trips
+        SET arrival_time = CURTIME()
+        WHERE trip_id = %s
+    """, (current_trip_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    # reset flags
     trip_in_progress = False
-    save_current_trip()
+    save_current_trip()   # still saves location JSON or other stuff
+    current_trip_id = None
+
     return jsonify({"status": "ok", "message": "Viaje detenido"}), 200
 
 @app.route("/location", methods=["POST"])
