@@ -131,8 +131,9 @@ def start_trip():
     if trip_in_progress:
         return jsonify({"status": "error", "message": "El viaje ya está en curso"}), 400
 
-    bus_plate = "BUS123"
-    school_phone = "26599085"
+    # For now, I am working with just 1 bus and 1 school, later, I will expand it :)
+    bus_plate = "BUS123" 
+    school_phone = "26599085" 
 
     conn = get_db_connection()
     cursor = conn.cursor()
