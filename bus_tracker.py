@@ -7,6 +7,7 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 import mysql.connector
 from mysql.connector import Error
+from pathlib import Path
 
 # -------------------- Config --------------------
 load_dotenv()
@@ -23,6 +24,7 @@ current_trip_id = None
 trip_in_progress = False
 coords_list = []
 current_trip_file = None
+current_plate = None
 
 # -------------------- Helpers --------------------
 def get_db_connection():
@@ -38,23 +40,66 @@ def get_db_connection():
         print("Error al conectar a la base de datos:", e)
         return None
     
-def start_new_trip(bus_id="bus123"):
+def start_new_trip(plate="BUS123"):
     """Configura el archivo JSON y memoria para el viaje actual"""
     global current_trip_file, coords_list, trip_in_progress
     coords_list = []
     os.makedirs("trips", exist_ok=True)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    current_trip_file = f"trips/trip_{bus_id}_{timestamp}.json"
+    current_trip_file = f"trips/trip_{plate}_{timestamp}.json"
     trip_in_progress = True
     print("🚍 Nuevo viaje iniciado:", current_trip_file)
 
 def save_current_trip():
-    """Guarda el viaje actual en el archivo JSON"""
-    global current_trip_file, coords_list
-    if current_trip_file and coords_list:
-        with open(current_trip_file, "w") as f:
-            json.dump(coords_list, f, indent=2)
+    """Guarda el viaje actual en un archivo JSON, con timestamps serializables"""
+    global current_trip_id, current_plate
+
+    if not current_trip_id:
+        print("No hay viaje activo para guardar.")
+        return
+
+    # --- Obtener estudiantes del viaje ---
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT ts.student_id, CONCAT(s.first_name,' ',s.last_name) AS name,
+               ts.status, ts.boarded_at, ts.dropoff_time
+        FROM trip_students ts
+        JOIN students s ON ts.student_id = s.student_id
+        WHERE ts.trip_id = %s
+    """, (current_trip_id,))
+    students = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    # --- Convertir datetimes a strings ---
+    students_serializable = []
+    for s in students:
+        students_serializable.append({
+            "student_id": s["student_id"],
+            "name": s["name"],
+            "status": s["status"],
+            "boarded_at": s["boarded_at"].isoformat() if s["boarded_at"] else None,
+            "dropoff_time": s["dropoff_time"].isoformat() if s["dropoff_time"] else None
+        })
+
+    # --- Preparar datos del viaje ---
+    trip_data = {
+        "trip_id": current_trip_id,
+        "plate": current_plate,
+        "locations": coords_list,
+        "students": students_serializable
+    }
+
+    # --- Guardar en JSON ---
+    trips_dir = Path("trips")
+    trips_dir.mkdir(exist_ok=True)
+    filename = trips_dir / f"trip_{current_plate}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    with open(filename, "w", encoding="utf-8") as f:
+        json.dump(trip_data, f, ensure_ascii=False, indent=4)
+
+    print(f"🚍 Viaje guardado: {filename}")
 
 # -------------------- Flask App --------------------
 app = Flask(__name__)
@@ -76,6 +121,7 @@ def board_student():
     global scanned_students
 
     data = request.get_json()
+    print("📱 Datos recibidos del celular:", data)
     student_id = data["student_id"]
     name = data["name"]
 
@@ -86,7 +132,9 @@ def board_student():
     student_entry = {
         "student_id": student_id,
         "name": name,
-        "status": "onboard"
+        "status": "onboard",
+         "boarded_at": datetime.now().isoformat(),  # 👈 aquí guardamos hora de abordaje
+        "dropoff_time": None
     }
 
     scanned_students.append(student_entry)
@@ -114,7 +162,8 @@ def alight_student():
     cursor = conn.cursor()
     cursor.execute("""
         UPDATE trip_students
-        SET status = 'dropped_off'
+        SET status = 'dropped_off',
+            dropoff_time = NOW()
         WHERE trip_id = %s AND student_id = %s
     """, (current_trip_id, student_id))
     conn.commit()
@@ -125,13 +174,12 @@ def alight_student():
 
 @app.route("/start_trip", methods=["POST"])
 def start_trip():
-    global current_trip_id, scanned_students, trip_in_progress
+    global current_trip_id, scanned_students, trip_in_progress,current_plate
 
     if trip_in_progress:
         return jsonify({"status": "error", "message": "El viaje ya está en curso"}), 400
 
-    # For now, I am working with just 1 bus and 1 school, later, I will expand it :)
-    bus_plate = "BUS123" 
+    current_plate  = "BUS123" 
     school_phone = "26599085" 
 
     conn = get_db_connection()
@@ -142,15 +190,15 @@ def start_trip():
         cursor.execute("""
             INSERT INTO trips (plate, school_phone, trip_date, departure_time)
             VALUES (%s, %s, CURDATE(), CURTIME())
-        """, (bus_plate, school_phone))
+        """, (current_plate, school_phone))
         current_trip_id = cursor.lastrowid
 
-        # Guardar estudiantes en DB solo con status
+        # Guardar estudiantes en DB con boarded_at
         for s in scanned_students:
             cursor.execute("""
-                INSERT INTO trip_students (trip_id, student_id, status)
-                VALUES (%s, %s, 'onboard')
-            """, (current_trip_id, s["student_id"]))
+                INSERT INTO trip_students (trip_id, student_id, status, boarded_at)
+                VALUES (%s, %s, 'onboard', %s)
+            """, (current_trip_id, s["student_id"], s["boarded_at"]))
 
         conn.commit()
         print(f"🚍 Viaje iniciado con {len(scanned_students)} estudiantes (trip_id={current_trip_id})")
@@ -162,8 +210,7 @@ def start_trip():
         cursor.close()
         conn.close()
 
-    # Limpiamos memoria y comenzamos tracking
-    start_new_trip(bus_id=bus_plate)
+    start_new_trip(plate=current_plate)
     trip_in_progress = True
     scanned_students = []  # vaciamos memoria pre-viaje
 
@@ -234,19 +281,13 @@ def location():
         return jsonify({"status": "error", "message": "No hay viaje en curso"}), 400
 
     data = request.get_json()
-    required_keys = {"bus_id", "lat", "lng", "timestamp"}
+    required_keys = {"lat", "lng", "timestamp"}
+    
     if not data or not required_keys.issubset(data.keys()):
+        print("📱 Datos recibidos del celular (faltan claves):", data)
         return jsonify({"status": "error", "message": "Faltan datos"}), 400
 
-    # Generar timestamp en hora de Costa Rica
-    cr_tz = pytz.timezone("America/Costa_Rica")
-    timestamp_cr = datetime.now(cr_tz).isoformat()
-    
-    # Agregar timestamp correcto al diccionario
-    data["timestamp"] = timestamp_cr
-
     coords_list.append(data)
-    save_current_trip()  # Guardar en JSON
 
     print(f"Latitude: {data['lat']} Longitude: {data['lng']} Time: {data['timestamp']}")
     return jsonify({"status": "ok"}), 200
@@ -271,7 +312,7 @@ def show_map():
     for c in coords_list:
         folium.Marker(
             location=(c['lat'], c['lng']),
-            popup=f"Bus: {c['bus_id']}<br>{c['timestamp']}"
+            popup=f"Bus: {c['plate']}<br>{c['timestamp']}"
         ).add_to(m)
 
     return m._repr_html_()

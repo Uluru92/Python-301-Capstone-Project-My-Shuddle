@@ -99,6 +99,8 @@ CREATE TABLE IF NOT EXISTS trip_students (
     trip_id INT,
     student_id INT,
     status ENUM('onboard', 'absent', 'dropped_off') DEFAULT 'onboard',
+    boarded_at DATETIME,      
+    dropoff_time DATETIME,    
     PRIMARY KEY (trip_id, student_id),
     FOREIGN KEY (trip_id) REFERENCES trips(trip_id),
     FOREIGN KEY (student_id) REFERENCES students(student_id)
