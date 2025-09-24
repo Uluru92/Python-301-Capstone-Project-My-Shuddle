@@ -24,46 +24,83 @@
 
         let scannedStudents = [];  
         let trackingInterval = null;
+        let studentsStatusMap = {}; // guarda estado de cada estudiante
 
         // --- Función para actualizar la lista de estudiantes ---
         async function loadStudents() {
             const response = await fetch("/get_boarded_students");
-            const students = await response.json();
+            const studentsFromServer = await response.json();
+
+            // Combinar estudiantes escaneados pre-viaje y los del servidor
+            const allStudents = [...new Map(
+                [...scannedStudents, ...studentsFromServer].map(s => [s.student_id, s])
+            ).values()];
+
+            // Actualizar el mapa de estado
+            allStudents.forEach(s => {
+                if (!studentsStatusMap[s.student_id]) {
+                    studentsStatusMap[s.student_id] = s.status || "onboard";
+                } else {
+                    studentsStatusMap[s.student_id] = s.status || studentsStatusMap[s.student_id];
+                }
+            });
 
             const container = document.getElementById("studentsList");
             container.innerHTML = "";
 
-            const displayStudents = students.length > 0 ? students : scannedStudents;
-
-            if(displayStudents.length === 0){
+            if (allStudents.length === 0) {
                 container.innerHTML = "<p>No hay estudiantes a bordo</p>";
-            } else {
-                displayStudents.forEach(student => {
-                    const div = document.createElement("div");
-                    div.innerHTML = `
-                        <button onclick="alightStudent('${student.student_id}')">
-                            ⬇️ ${student.name} - Bajar
-                        </button>
-                    `;
-                    container.appendChild(div);
-                });
+                document.getElementById("startBtn").disabled = true;
+                document.getElementById("stopBtn").disabled = true;
+                return;
             }
 
-            // Habilitar Start Trip si hay al menos un estudiante y el viaje no comenzó
-            document.getElementById("startBtn").disabled = displayStudents.length === 0;
+            let allDroppedOff = true;
+
+            allStudents.forEach(student => {
+                const div = document.createElement("div");
+                const status = studentsStatusMap[student.student_id];
+
+                if (status === "dropped_off") {
+                    div.innerHTML = `<button style="background-color: green; color: white;" disabled>
+                                        ✅ ${student.name} ya se bajó del bus
+                                     </button>`;
+                } else {
+                    div.innerHTML = `<button onclick="alightStudent('${student.student_id}')">
+                                        ⬇️ ${student.name} - Bajar
+                                     </button>`;
+                    allDroppedOff = false;
+                }
+
+                container.appendChild(div);
+            });
+
+            // Botones de control
+            const hasOnboard = Object.values(studentsStatusMap).some(s => s === "onboard");
+            document.getElementById("startBtn").disabled = !hasOnboard || trackingInterval !== null;
+            document.getElementById("stopBtn").disabled = !allDroppedOff;
         }
 
         // --- Función para bajar estudiante ---
         async function alightStudent(studentId) {
+            if (!trackingInterval) {
+                alert("El viaje aún no ha comenzado. No se puede bajar al estudiante.");
+                return;
+            }
+
             const response = await fetch("/alight_student", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify({ student_id: studentId })
             });
-            const result = await response.json();
-            alert(result.message);
 
-            scannedStudents = scannedStudents.filter(s => s.student_id !== studentId);
+            const result = await response.json();
+
+            if (result.status === "ok") {
+                studentsStatusMap[studentId] = "dropped_off";
+            }
+
+            alert(result.message);
             loadStudents();
         }
 
@@ -87,8 +124,6 @@
                 if(data.status !== "ok") throw new Error(data.message);
 
                 alert(`${studentData.name} registrado en la buseta.`);
-                
-                // Guardar en frontend si no hay viaje activo
                 scannedStudents.push({student_id: studentData.student_id, name: studentData.name});
                 loadStudents();
 
@@ -107,12 +142,9 @@
 
                 alert("Trip started!");
 
-                // Deshabilitar botones correctamente
                 document.getElementById("startBtn").disabled = true;
                 document.getElementById("scanQRBtn").disabled = true;
-                document.getElementById("stopBtn").disabled = false;
 
-                // Enviar coordenadas periódicamente
                 const sendLocation = (pos) => {
                     const locationData = {
                         bus_id: "bus123",
@@ -149,6 +181,9 @@
                 alert("Trip stopped!");
                 clearInterval(trackingInterval);
                 trackingInterval = null;
+
+                // Mantener botones verdes
+                loadStudents();
 
                 document.getElementById("startBtn").disabled = false;
                 document.getElementById("scanQRBtn").disabled = false;

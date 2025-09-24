@@ -95,34 +95,33 @@ def board_student():
 
 @app.route("/alight_student", methods=["POST"])
 def alight_student():
+    global trip_in_progress, current_trip_id
     data = request.get_json()
     student_id = data.get("student_id")
 
+    if not student_id:
+        return jsonify({"status": "error", "message": "No se proporcionó student_id"}), 400
+
+    if not trip_in_progress or not current_trip_id:
+        # Si aún no hay viaje en curso
+        return jsonify({
+            "status": "error",
+            "message": "El viaje aún no ha iniciado. No puedes bajar estudiantes."
+        }), 400
+
+    # --- Aquí sigue tu lógica actual para marcar al estudiante como dropped_off ---
     conn = get_db_connection()
-    cur = conn.cursor()
-
-    # Verificar si está onboard
-    cur.execute("""
-        SELECT * FROM trip_students 
-        WHERE trip_id = %s AND student_id = %s AND status = 'onboard'
-    """, (current_trip_id, student_id))
-    student = cur.fetchone()
-
-    if not student:
-        conn.close()
-        return jsonify({"status": "error", "message": "Estudiante no está a bordo"}), 404
-
-    # Actualizar estado
-    cur.execute("""
-        UPDATE trip_students 
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE trip_students
         SET status = 'dropped_off'
         WHERE trip_id = %s AND student_id = %s
     """, (current_trip_id, student_id))
     conn.commit()
+    cursor.close()
     conn.close()
 
-    print(f"⬇️ Estudiante {student_id} bajó del bus")
-    return jsonify({"status": "ok", "message": f"⬇️ Estudiante {student_id} bajó del bus"}), 200
+    return jsonify({"status": "ok", "message": "Estudiante marcado como bajado"}), 200
 
 @app.route("/start_trip", methods=["POST"])
 def start_trip():
@@ -195,9 +194,23 @@ def stop_trip():
     if not trip_in_progress or not current_trip_id:
         return jsonify({"status": "error", "message": "No hay viaje en curso"}), 400
 
-    # ✅ Update arrival_time in the DB
     conn = get_db_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(dictionary=True)
+
+    # Verificar si aún quedan estudiantes a bordo
+    cursor.execute("""
+        SELECT COUNT(*) AS onboard_count
+        FROM trip_students
+        WHERE trip_id = %s AND status = 'onboard'
+    """, (current_trip_id,))
+    onboard_count = cursor.fetchone()["onboard_count"]
+
+    if onboard_count > 0:
+        cursor.close()
+        conn.close()
+        return jsonify({"status": "error", "message": "No se puede detener el viaje: aún hay estudiantes a bordo"}), 400
+
+    # ✅ Si ya no quedan estudiantes, cerrar viaje
     cursor.execute("""
         UPDATE trips
         SET arrival_time = CURTIME()
@@ -207,9 +220,8 @@ def stop_trip():
     cursor.close()
     conn.close()
 
-    # reset flags
     trip_in_progress = False
-    save_current_trip()   # still saves location JSON or other stuff
+    save_current_trip()
     current_trip_id = None
 
     return jsonify({"status": "ok", "message": "Viaje detenido"}), 200
