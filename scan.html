@@ -24,7 +24,6 @@ async function sendStudent() {
         const result = await response.json();
         document.getElementById("result").innerText = result.message;
 
-        // Opcional: si el viaje aún no comenzó, habilitar botón Start Trip
         if (result.status === "ok") {
             const startBtn = window.opener?.document.getElementById("startBtn");
             if (startBtn) startBtn.disabled = false;
