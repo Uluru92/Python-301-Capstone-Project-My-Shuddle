@@ -312,7 +312,7 @@ def show_map():
     for c in coords_list:
         folium.Marker(
             location=(c['lat'], c['lng']),
-            popup=f"Bus: {c['plate']}<br>{c['timestamp']}"
+            popup=f"Bus: {current_plate}<br>{c['timestamp']}"
         ).add_to(m)
 
     return m._repr_html_()
