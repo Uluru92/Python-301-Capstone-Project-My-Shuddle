@@ -3,7 +3,9 @@ from tkinter import ttk
 from tkcalendar import DateEntry
 from tkinter import messagebox
 from PIL import Image, ImageTk
-import mysql.connector, qrcode, json, os, datetime
+from pathlib import Path
+import mysql.connector, qrcode, json, os, webbrowser, folium
+from datetime import datetime
 from dotenv import load_dotenv
 
 # Admin user Tkinter
@@ -497,84 +499,126 @@ def view_trips(parent_window):
     parent_window.withdraw()
     trips_window = Toplevel(parent_window)
     trips_window.title("Show Trips")
-    trips_window.geometry("600x400")
+    trips_window.geometry("900x600")
 
-    # Make a 2×2 grid on the root of this window
-    trips_window.grid_rowconfigure(0, weight=1)
-    trips_window.grid_rowconfigure(2, weight=1)
-    trips_window.grid_columnconfigure(0, weight=1)
-    trips_window.grid_columnconfigure(2, weight=1)
-
-    # Center frame
     frm = ttk.Frame(trips_window, padding=20)
-    frm.grid(row=1, column=1, sticky="nsew")
+    frm.grid(row=0, column=0, sticky="nsew")
+    trips_window.rowconfigure(0, weight=1)
+    trips_window.columnconfigure(0, weight=1)
 
-    # --- Date filter ---
+    # --- Filtro por fecha ---
     ttk.Label(frm, text="Select Trip Date:").grid(column=0, row=0, sticky=W, pady=5)
     date_var = StringVar(value=datetime.now().strftime("%Y-%m-%d"))
     date_entry = DateEntry(frm, textvariable=date_var, date_pattern="yyyy-mm-dd")
-    date_entry.grid(column=1, row=0, pady=5)
+    date_entry.grid(column=1, row=0, pady=5, sticky=W)
 
-    # --- Status filter ---
+    # --- Filtro por status ---
     ttk.Label(frm, text="Select Trip Status:").grid(column=0, row=1, sticky=W, pady=5)
     status_var = StringVar()
     combo_status = ttk.Combobox(frm, textvariable=status_var, state="readonly", width=20)
-    combo_status.grid(column=1, row=1, pady=5)
+    combo_status['values'] = ("All","onboard", "absent", "dropped_off")
+    combo_status.current(0)
+    combo_status.grid(column=1, row=1, pady=5, sticky=W)
 
-    # Inicializar valores según fecha (por defecto: hoy)
-    def update_status_options(*args):
-        selected_date = date_var.get()
-        today = datetime.now().strftime("%Y-%m-%d")
-        if selected_date < today:  # fecha pasada
-            combo_status['values'] = ("absent", "dropped_off")
-        else:  # fecha actual o futura
-            combo_status['values'] = ("onboard", "absent", "dropped_off")
-        combo_status.current(0)
+    # --- Treeview con resumen ---
+    columns = ("school", "plate", "student", "boarded_at", "dropoff_time", "json_file")
+    tree = ttk.Treeview(frm, columns=columns, show="headings", height=15)
+    tree.grid(column=0, row=3, columnspan=3, pady=10, sticky="nsew")
 
-    date_var.trace("w", update_status_options)
-    update_status_options()  # ejecutar inicial
+    for col in columns[:-1]:  # ocultamos json_file
+        tree.heading(col, text=col.capitalize())
+        tree.column(col, width=150)
 
-    # --- Treeview to display results ---
-    columns = ("trip_id", "plate", "school_phone", "trip_date", "departure", "arrival", "student_id")
-    tree = ttk.Treeview(frm, columns=columns, show="headings", height=10)
-    for col in columns:
-        tree.heading(col, text=col)
-        tree.column(col, width=100)
-    tree.grid(column=0, row=3, columnspan=2, pady=10)
+    tree.column("json_file", width=0, stretch=False)  # oculto para el usuario
 
+    frm.grid_rowconfigure(3, weight=1)
+    frm.grid_columnconfigure(2, weight=1)
+
+    # --- Cargar datos desde JSON ---
     def load_trips():
         selected_status = status_var.get()
         selected_date = date_var.get()
 
-        conn = connect_db()
-        cursor = conn.cursor()
-        query = """
-            SELECT t.trip_id, t.plate, t.school_phone, t.trip_date, t.departure_time, t.arrival_time, ts.student_id
-            FROM trips t
-            JOIN trip_students ts ON t.trip_id = ts.trip_id
-            WHERE ts.status = %s AND t.trip_date = %s
-        """
-        cursor.execute(query, (selected_status, selected_date))
-        rows = cursor.fetchall()
-        conn.close()
-
-        # Clear existing rows
+        # Limpiar tabla
         for row in tree.get_children():
             tree.delete(row)
 
-        # Insert new rows
-        for r in rows:
-            tree.insert("", "end", values=r)
+        trips_dir = Path(__file__).parent / "trips"
 
-    # Button to fetch trips
-    ttk.Button(frm, text="View Trips", command=load_trips).grid(column=1, row=2, pady=5, sticky=E)
+        print("Selected date:", selected_date)
+        print("Trips found:")
 
-    # Exit button
+        for file in trips_dir.glob("*.json"):
+            with open(file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            # Filtrar por fecha según nombre de archivo
+            file_date = file.stem.split("_")[0]  # toma 'YYYY-MM-DD'
+            if file_date != selected_date:
+                continue
+
+            # Recorrer estudiantes
+            for st in data["students"]:
+                # Solo filtrar si no es "All"
+                if selected_status != "All" and st["status"] != selected_status:
+                    continue
+
+                tree.insert("", "end", values=(
+                    data.get("school", ""),
+                    data.get("plate", ""),
+                    st.get("name", ""),
+                    st.get("boarded_at", ""),
+                    st.get("dropoff_time", ""),
+                    str(file)  # path completo para el mapa
+                ))
+
+    # Llamada automática al abrir la ventana
+    load_trips()
+
+    ttk.Button(frm, text="View Trips", command=load_trips).grid(column=2, row=1, pady=5, sticky=E)
+
+    # --- Mostrar mapa ---
+    def show_map():
+        selected = tree.focus()
+        if not selected:
+            print("Selecciona un viaje")
+            return
+
+        values = tree.item(selected, "values")
+        json_file = values[-1]
+
+        with open(json_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        coords = [(loc["lat"], loc["lng"]) for loc in data["locations"]]
+
+        if not coords:
+            print("No hay coordenadas para este viaje")
+            return
+
+        # mapa con folium
+        m = folium.Map(location=coords[0], zoom_start=15)
+        folium.PolyLine(coords, color="blue", weight=3).add_to(m)
+
+        # opcional: agregar marcadores de subida y bajada
+        for st in data["students"]:
+            if st["boarded_at"]:
+                folium.Marker(coords[0], popup=f"Subida: {st['name']}").add_to(m)
+            if st["dropoff_time"]:
+                folium.Marker(coords[-1], popup=f"Bajada: {st['name']}").add_to(m)
+
+        map_file = "trip_map.html"
+        m.save(map_file)
+        webbrowser.open(map_file)
+
+    ttk.Button(frm, text="Show Map", command=show_map).grid(column=2, row=2, pady=5, sticky=E)
+
+    # --- Botón cerrar ---
     def close_trips_window(window, parent_window):
         window.destroy()
         parent_window.deiconify()
 
-    ttk.Button(frm, text="Close", command=lambda: close_trips_window(trips_window, parent_window)).grid(column=1, row=4, pady=10, sticky=E)
+    ttk.Button(frm, text="Close", command=lambda: close_trips_window(trips_window, parent_window)).grid(column=2, row=4, pady=10, sticky=E)
 
     trips_window.protocol("WM_DELETE_WINDOW", lambda: close_trips_window(trips_window, parent_window))
     trips_window.grab_set()

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    
+        <script>
+            L_NO_TOUCH = false;
+            L_DISABLE_3D = false;
+        </script>
+    
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_e7b8208da5eb0d38843ec01a9a204722 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+        
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_e7b8208da5eb0d38843ec01a9a204722" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_e7b8208da5eb0d38843ec01a9a204722 = L.map(
+                "map_e7b8208da5eb0d38843ec01a9a204722",
+                {
+                    center: [9.9324747, -84.0658389],
+                    crs: L.CRS.EPSG3857,
+                    zoom: 15,
+                    zoomControl: true,
+                    preferCanvas: false,
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_da0a7bb443816cc01dffe5cb0bf5040a = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {"attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors", "detectRetina": false, "maxNativeZoom": 19, "maxZoom": 19, "minZoom": 0, "noWrap": false, "opacity": 1, "subdomains": "abc", "tms": false}
+            );
+        
+    
+            tile_layer_da0a7bb443816cc01dffe5cb0bf5040a.addTo(map_e7b8208da5eb0d38843ec01a9a204722);
+        
+    
+            var poly_line_f6ade24c7892838f3487616cf295b267 = L.polyline(
+                [[9.9324747, -84.0658389], [9.9324747, -84.0658389], [9.9324747, -84.0658389], [9.9324747, -84.0658389], [9.9324747, -84.0658389]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1.0, "smoothFactor": 1.0, "stroke": true, "weight": 3}
+            ).addTo(map_e7b8208da5eb0d38843ec01a9a204722);
+        
+    
+            var marker_d081b757b53d95adae6408b401fe1120 = L.marker(
+                [9.9324747, -84.0658389],
+                {}
+            ).addTo(map_e7b8208da5eb0d38843ec01a9a204722);
+        
+    
+        var popup_2992eec9bb866992e2c5b4f40dea08a3 = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_2af8600a963882b9274a6e64607fde48 = $(`<div id="html_2af8600a963882b9274a6e64607fde48" style="width: 100.0%; height: 100.0%;">Subida: Jimena Alvarado Araya</div>`)[0];
+                popup_2992eec9bb866992e2c5b4f40dea08a3.setContent(html_2af8600a963882b9274a6e64607fde48);
+            
+        
+
+        marker_d081b757b53d95adae6408b401fe1120.bindPopup(popup_2992eec9bb866992e2c5b4f40dea08a3)
+        ;
+
+        
+    
+    
+            var marker_49399161a20548c8b3142390f3988688 = L.marker(
+                [9.9324747, -84.0658389],
+                {}
+            ).addTo(map_e7b8208da5eb0d38843ec01a9a204722);
+        
+    
+        var popup_3f2dc7ccb0724f591a222674847ad807 = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_424cfc1c30e14357cfc88c027f7ac6c6 = $(`<div id="html_424cfc1c30e14357cfc88c027f7ac6c6" style="width: 100.0%; height: 100.0%;">Bajada: Jimena Alvarado Araya</div>`)[0];
+                popup_3f2dc7ccb0724f591a222674847ad807.setContent(html_424cfc1c30e14357cfc88c027f7ac6c6);
+            
+        
+
+        marker_49399161a20548c8b3142390f3988688.bindPopup(popup_3f2dc7ccb0724f591a222674847ad807)
+        ;
+
+        
+    
+    
+            var marker_54c7631237e2140f01bf8c5daeca2ad2 = L.marker(
+                [9.9324747, -84.0658389],
+                {}
+            ).addTo(map_e7b8208da5eb0d38843ec01a9a204722);
+        
+    
+        var popup_10e449a4c9fb6f4f6f1a8097e6d1bd67 = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_c68887b117eeca03ad5cc200479fcdd3 = $(`<div id="html_c68887b117eeca03ad5cc200479fcdd3" style="width: 100.0%; height: 100.0%;">Subida: Josue Alvarado Araya</div>`)[0];
+                popup_10e449a4c9fb6f4f6f1a8097e6d1bd67.setContent(html_c68887b117eeca03ad5cc200479fcdd3);
+            
+        
+
+        marker_54c7631237e2140f01bf8c5daeca2ad2.bindPopup(popup_10e449a4c9fb6f4f6f1a8097e6d1bd67)
+        ;
+
+        
+    
+    
+            var marker_8782789f3e6d8cbdb1f8c9b8d76c9cdf = L.marker(
+                [9.9324747, -84.0658389],
+                {}
+            ).addTo(map_e7b8208da5eb0d38843ec01a9a204722);
+        
+    
+        var popup_0ecd54a975e0547ae3a9ba1d0fec9ec4 = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_0605c6523a8e7f824937bc6e0010ee4b = $(`<div id="html_0605c6523a8e7f824937bc6e0010ee4b" style="width: 100.0%; height: 100.0%;">Bajada: Josue Alvarado Araya</div>`)[0];
+                popup_0ecd54a975e0547ae3a9ba1d0fec9ec4.setContent(html_0605c6523a8e7f824937bc6e0010ee4b);
+            
+        
+
+        marker_8782789f3e6d8cbdb1f8c9b8d76c9cdf.bindPopup(popup_0ecd54a975e0547ae3a9ba1d0fec9ec4)
+        ;
+
+        
+    
+</script>
+</html>

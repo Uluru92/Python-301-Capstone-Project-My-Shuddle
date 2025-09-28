@@ -46,8 +46,10 @@ def start_new_trip(plate="BUS123"):
     coords_list = []
     os.makedirs("trips", exist_ok=True)
 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    current_trip_file = f"trips/trip_{plate}_{timestamp}.json"
+    now = datetime.now()
+    date_str = now.strftime("%Y-%m-%d")      # YYYY-MM-DD
+    time_str = now.strftime("%H%M%S")        # HHMMSS
+    current_trip_file = f"trips/{date_str}_{plate}_trip_{time_str}.json"
     trip_in_progress = True
     print("🚍 Nuevo viaje iniciado:", current_trip_file)
 
@@ -62,7 +64,7 @@ def save_current_trip():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    # --- Obtener nombre de la escuela del viaje ---
+    # --- Obtener nombre de la escuela ---
     cursor.execute("""
         SELECT sc.school_name
         FROM trips t
@@ -72,7 +74,7 @@ def save_current_trip():
     school_row = cursor.fetchone()
     school_name = school_row["school_name"] if school_row else None
 
-    # --- Obtener estudiantes del viaje ---
+    # --- Obtener estudiantes ---
     cursor.execute("""
         SELECT ts.student_id, CONCAT(s.first_name,' ',s.last_name) AS name,
                ts.status, ts.boarded_at, ts.dropoff_time
@@ -99,15 +101,19 @@ def save_current_trip():
     trip_data = {
         "trip_id": current_trip_id,
         "plate": current_plate,
-        "school": school_name,   # 👈 nuevo campo
+        "school": school_name,
         "locations": coords_list,
         "students": students_serializable
     }
 
-    # --- Guardar en JSON ---
+    # --- Guardar en JSON con nuevo formato ---
     trips_dir = Path("trips")
     trips_dir.mkdir(exist_ok=True)
-    filename = trips_dir / f"trip_{current_plate}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    now = datetime.now()
+    date_str = now.strftime("%Y-%m-%d")
+    time_str = now.strftime("%H%M%S")
+    filename = trips_dir / f"{date_str}_{current_plate}_trip_{time_str}.json"
+
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(trip_data, f, ensure_ascii=False, indent=4)
 
