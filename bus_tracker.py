@@ -59,9 +59,20 @@ def save_current_trip():
         print("No hay viaje activo para guardar.")
         return
 
-    # --- Obtener estudiantes del viaje ---
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
+
+    # --- Obtener nombre de la escuela del viaje ---
+    cursor.execute("""
+        SELECT sc.school_name
+        FROM trips t
+        JOIN schools sc ON t.school_phone = sc.school_phone
+        WHERE t.trip_id = %s
+    """, (current_trip_id,))
+    school_row = cursor.fetchone()
+    school_name = school_row["school_name"] if school_row else None
+
+    # --- Obtener estudiantes del viaje ---
     cursor.execute("""
         SELECT ts.student_id, CONCAT(s.first_name,' ',s.last_name) AS name,
                ts.status, ts.boarded_at, ts.dropoff_time
@@ -88,6 +99,7 @@ def save_current_trip():
     trip_data = {
         "trip_id": current_trip_id,
         "plate": current_plate,
+        "school": school_name,   # 👈 nuevo campo
         "locations": coords_list,
         "students": students_serializable
     }
