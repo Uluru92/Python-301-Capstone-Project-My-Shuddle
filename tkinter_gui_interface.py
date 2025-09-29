@@ -495,6 +495,7 @@ def register_bus(parent_window):
     bus_window.wait_window()
 
 # View trips
+# View trips
 def view_trips(parent_window):
     parent_window.withdraw()
     trips_window = Toplevel(parent_window)
@@ -512,18 +513,10 @@ def view_trips(parent_window):
     date_entry = DateEntry(frm, textvariable=date_var, date_pattern="yyyy-mm-dd")
     date_entry.grid(column=1, row=0, pady=5, sticky=W)
 
-    # --- Filtro por status ---
-    ttk.Label(frm, text="Select Trip Status:").grid(column=0, row=1, sticky=W, pady=5)
-    status_var = StringVar()
-    combo_status = ttk.Combobox(frm, textvariable=status_var, state="readonly", width=20)
-    combo_status['values'] = ("All","onboard", "absent", "dropped_off")
-    combo_status.current(0)
-    combo_status.grid(column=1, row=1, pady=5, sticky=W)
-
     # --- Treeview con resumen ---
     columns = ("school", "plate", "student", "boarded_at", "dropoff_time", "json_file")
     tree = ttk.Treeview(frm, columns=columns, show="headings", height=15)
-    tree.grid(column=0, row=3, columnspan=3, pady=10, sticky="nsew")
+    tree.grid(column=0, row=2, columnspan=3, pady=10, sticky="nsew")
 
     for col in columns[:-1]:  # ocultamos json_file
         tree.heading(col, text=col.capitalize())
@@ -531,12 +524,11 @@ def view_trips(parent_window):
 
     tree.column("json_file", width=0, stretch=False)  # oculto para el usuario
 
-    frm.grid_rowconfigure(3, weight=1)
+    frm.grid_rowconfigure(2, weight=1)
     frm.grid_columnconfigure(2, weight=1)
 
     # --- Cargar datos desde JSON ---
     def load_trips():
-        selected_status = status_var.get()
         selected_date = date_var.get()
 
         # Limpiar tabla
@@ -544,9 +536,6 @@ def view_trips(parent_window):
             tree.delete(row)
 
         trips_dir = Path(__file__).parent / "trips"
-
-        print("Selected date:", selected_date)
-        print("Trips found:")
 
         for file in trips_dir.glob("*.json"):
             with open(file, "r", encoding="utf-8") as f:
@@ -557,12 +546,8 @@ def view_trips(parent_window):
             if file_date != selected_date:
                 continue
 
-            # Recorrer estudiantes
+            # Recorrer estudiantes (cada viaje aparece solo una vez)
             for st in data["students"]:
-                # Solo filtrar si no es "All"
-                if selected_status != "All" and st["status"] != selected_status:
-                    continue
-
                 tree.insert("", "end", values=(
                     data.get("school", ""),
                     data.get("plate", ""),
@@ -575,7 +560,7 @@ def view_trips(parent_window):
     # Llamada automática al abrir la ventana
     load_trips()
 
-    ttk.Button(frm, text="View Trips", command=load_trips).grid(column=2, row=1, pady=5, sticky=E)
+    ttk.Button(frm, text="View Trips", command=load_trips).grid(column=2, row=0, pady=5, sticky=E)
 
     # --- Mostrar mapa ---
     def show_map():
@@ -611,14 +596,14 @@ def view_trips(parent_window):
         m.save(map_file)
         webbrowser.open(map_file)
 
-    ttk.Button(frm, text="Show Map", command=show_map).grid(column=2, row=2, pady=5, sticky=E)
+    ttk.Button(frm, text="Show Map", command=show_map).grid(column=2, row=1, pady=5, sticky=E)
 
     # --- Botón cerrar ---
     def close_trips_window(window, parent_window):
         window.destroy()
         parent_window.deiconify()
 
-    ttk.Button(frm, text="Close", command=lambda: close_trips_window(trips_window, parent_window)).grid(column=2, row=4, pady=10, sticky=E)
+    ttk.Button(frm, text="Close", command=lambda: close_trips_window(trips_window, parent_window)).grid(column=2, row=3, pady=10, sticky=E)
 
     trips_window.protocol("WM_DELETE_WINDOW", lambda: close_trips_window(trips_window, parent_window))
     trips_window.grab_set()
