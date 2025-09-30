@@ -359,6 +359,7 @@ def location():
     print(f"Latitude: {lat} Longitude: {lng} Time: {timestamp} (plate={app_state.current_bus.plate})")
     return jsonify({"status": "ok"}), 200
 
+
 @app.route("/map")
 def show_map():
     """Devuelve un mapa HTML con la ruta y los markers (usa folium y app_state.current_bus)"""
