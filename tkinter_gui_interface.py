@@ -495,7 +495,6 @@ def register_bus(parent_window):
     bus_window.wait_window()
 
 # View trips
-# View trips
 def view_trips(parent_window):
     parent_window.withdraw()
     trips_window = Toplevel(parent_window)
