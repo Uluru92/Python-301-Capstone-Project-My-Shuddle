@@ -149,6 +149,9 @@ def board_student():
     print("📱 Datos recibidos del celular:", data)
     student_id = data["student_id"]
     name = data["name"]
+    lat = data.get("lat")
+    lng = data.get("lng")
+    timestamp = data.get("timestamp")
 
     # Verificar si ya está en memoria (pre-scanned)
     if any(str(s.student_id) == str(student_id) for s in app_state.pre_scanned_students):
@@ -158,7 +161,11 @@ def board_student():
     student = Student(student_id, name)
     student.status = "onboard"
     student.boarded_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # formato MySQL-friendly
+    student.boarded_lat = lat
+    student.boarded_lng = lng
     student.dropoff_time = None
+    student.dropoff_lat = None
+    student.dropoff_lng = None
 
     app_state.pre_scanned_students.append(student)
     print(f"🟢 Estudiante {name} registrado en memoria (pre-viaje)")
@@ -169,7 +176,11 @@ def board_student():
             "name": student.name,
             "status": student.status,
             "boarded_time": student.boarded_time,
-            "dropoff_time": student.dropoff_time
+            "boarded_lat": student.boarded_lat,
+            "boarded_lng": student.boarded_lng,
+            "dropoff_time": student.dropoff_time,
+            "dropoff_lat": student.dropoff_lat,
+            "dropoff_lng": student.dropoff_lng
         }
     })
 
@@ -178,6 +189,8 @@ def alight_student():
     """Marca a un estudiante como dropped_off (DB) y actualiza estado local si aplica"""
     data = request.get_json()
     student_id = data.get("student_id")
+    lat = data.get("lat")
+    lng = data.get("lng")
 
     if not student_id:
         return jsonify({"status": "error", "message": "No se proporcionó student_id"}), 400
@@ -193,10 +206,12 @@ def alight_student():
     cursor = conn.cursor()
     cursor.execute("""
         UPDATE trip_students
-        SET status = 'dropped_off',
-            dropoff_time = NOW()
+            SET status =  'dropped_off',
+            dropoff_time = NOW(),
+            dropoff_lat = %s,
+            dropoff_lng = %s
         WHERE trip_id = %s AND student_id = %s
-    """, (app_state.current_trip_id, student_id))
+    """, (lat, lng, app_state.current_trip_id, student_id))
     conn.commit()
     cursor.close()
     conn.close()
@@ -207,6 +222,8 @@ def alight_student():
             if str(s.student_id) == str(student_id):
                 s.status = "dropped_off"
                 s.dropoff_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                s.dropoff_lat = lat
+                s.dropoff_lng = lng
                 break
 
     return jsonify({"status": "ok", "message": "Estudiante marcado como bajado"}), 200
@@ -236,12 +253,16 @@ def start_trip():
 
         # Crear objeto Bus y añadir estudiantes escaneados
         bus = Bus(current_plate)
+
         for s in app_state.pre_scanned_students:
+
             # Insertar en trip_students (con boarded_time ya en formato MySQL)
             cursor.execute("""
-                INSERT INTO trip_students (trip_id, student_id, status, boarded_time)
-                VALUES (%s, %s, %s, %s)
-            """, (app_state.current_trip_id, s.student_id, s.status, s.boarded_time))
+                INSERT INTO trip_students (
+                    trip_id, student_id, status, boarded_time, boarded_lat, boarded_lng
+                ) VALUES (%s, %s, %s, %s, %s, %s)
+            """, (app_state.current_trip_id, s.student_id, s.status, s.boarded_time, s.boarded_lat, s.boarded_lng))
+
             # añadir al objeto bus
             bus.board_student(s)
 
@@ -358,7 +379,6 @@ def location():
 
     print(f"Latitude: {lat} Longitude: {lng} Time: {timestamp} (plate={app_state.current_bus.plate})")
     return jsonify({"status": "ok"}), 200
-
 
 @app.route("/map")
 def show_map():

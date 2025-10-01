@@ -130,17 +130,38 @@
                     throw new Error("Datos incompletos en el clipboard");
                 }
 
-                const res = await fetch(backendBoardUrl, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(studentData)
-                });
-                const data = await res.json();
-                if(data.status !== "ok") throw new Error(data.message);
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(async (pos) => {
+                        const locationData = {
+                            student_id: studentData.student_id,
+                            name: studentData.name,
+                            lat: pos.coords.latitude,
+                            lng: pos.coords.longitude,
+                            timestamp: new Date().toISOString()
+                        };
 
-                alert(`${studentData.name} registrado en la buseta.`);
-                scannedStudents.push({student_id: studentData.student_id, name: studentData.name});
-                loadStudents();
+                        const res = await fetch(backendBoardUrl, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(locationData)
+                        });
+
+                        const data = await res.json();
+                        if (data.status !== "ok") throw new Error(data.message);
+
+                        alert(`${studentData.name} registrado en la buseta.`);
+                        scannedStudents.push({
+                            student_id: studentData.student_id,
+                            name: studentData.name
+                        });
+                        loadStudents();
+
+                    }, (err) => {
+                        alert("Error al obtener ubicación: " + err.message);
+                    });
+                } else {
+                    alert("Geolocalización no soportada en este dispositivo.");
+                }
 
             } catch(err){
                 alert("Error al registrar estudiante: " + err.message);
