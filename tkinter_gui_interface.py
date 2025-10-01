@@ -513,7 +513,7 @@ def view_trips(parent_window):
     date_entry.grid(column=1, row=0, pady=5, sticky=W)
 
     # --- Treeview con resumen ---
-    columns = ("school", "plate", "student", "boarded_at", "dropoff_time", "json_file")
+    columns = ("school", "plate", "student", "boarded_time", "dropoff_time", "json_file")
     tree = ttk.Treeview(frm, columns=columns, show="headings", height=15)
     tree.grid(column=0, row=2, columnspan=3, pady=10, sticky="nsew")
 
@@ -551,7 +551,7 @@ def view_trips(parent_window):
                     data.get("school", ""),
                     data.get("plate", ""),
                     st.get("name", ""),
-                    st.get("boarded_at", ""),
+                    st.get("boarded_time", ""),
                     st.get("dropoff_time", ""),
                     str(file)  # path completo para el mapa
                 ))
@@ -586,7 +586,7 @@ def view_trips(parent_window):
 
         # opcional: agregar marcadores de subida y bajada
         for st in data["students"]:
-            if st["boarded_at"]:
+            if st["boarded_time"]:
                 folium.Marker(coords[0], popup=f"Subida: {st['name']}").add_to(m)
             if st["dropoff_time"]:
                 folium.Marker(coords[-1], popup=f"Bajada: {st['name']}").add_to(m)

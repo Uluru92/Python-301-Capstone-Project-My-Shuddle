@@ -80,7 +80,7 @@ def save_current_trip():
     # --- Obtener estudiantes --- (leemos desde la DB para que coincida con trip_id)
     cursor.execute("""
         SELECT ts.student_id, CONCAT(s.first_name,' ',s.last_name) AS name,
-               ts.status, ts.boarded_at, ts.dropoff_time
+               ts.status, ts.boarded_time, ts.dropoff_time
         FROM trip_students ts
         JOIN students s ON ts.student_id = s.student_id
         WHERE ts.trip_id = %s
@@ -96,7 +96,7 @@ def save_current_trip():
             "student_id": s["student_id"],
             "name": s["name"],
             "status": s["status"],
-            "boarded_at": s["boarded_at"].isoformat() if s["boarded_at"] else None,
+            "boarded_time": s["boarded_time"].isoformat() if s["boarded_time"] else None,
             "dropoff_time": s["dropoff_time"].isoformat() if s["dropoff_time"] else None
         })
 
@@ -157,7 +157,7 @@ def board_student():
     # Creamos Student y le añadimos atributos de escaneo
     student = Student(student_id, name)
     student.status = "onboard"
-    student.boarded_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # formato MySQL-friendly
+    student.boarded_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # formato MySQL-friendly
     student.dropoff_time = None
 
     app_state.pre_scanned_students.append(student)
@@ -168,7 +168,7 @@ def board_student():
             "student_id": student.student_id,
             "name": student.name,
             "status": student.status,
-            "boarded_at": student.boarded_at,
+            "boarded_time": student.boarded_time,
             "dropoff_time": student.dropoff_time
         }
     })
@@ -237,11 +237,11 @@ def start_trip():
         # Crear objeto Bus y añadir estudiantes escaneados
         bus = Bus(current_plate)
         for s in app_state.pre_scanned_students:
-            # Insertar en trip_students (con boarded_at ya en formato MySQL)
+            # Insertar en trip_students (con boarded_time ya en formato MySQL)
             cursor.execute("""
-                INSERT INTO trip_students (trip_id, student_id, status, boarded_at)
+                INSERT INTO trip_students (trip_id, student_id, status, boarded_time)
                 VALUES (%s, %s, %s, %s)
-            """, (app_state.current_trip_id, s.student_id, s.status, s.boarded_at))
+            """, (app_state.current_trip_id, s.student_id, s.status, s.boarded_time))
             # añadir al objeto bus
             bus.board_student(s)
 
@@ -288,7 +288,7 @@ def get_boarded_students():
                 "student_id": s.student_id,
                 "name": s.name,
                 "status": getattr(s, "status", "onboard"),
-                "boarded_at": getattr(s, "boarded_at", None),
+                "boarded_time": getattr(s, "boarded_time", None),
                 "dropoff_time": getattr(s, "dropoff_time", None)
             })
         return jsonify(out)
