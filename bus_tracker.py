@@ -93,16 +93,16 @@ def save_current_trip():
     students_serializable = []
     for s in students:
         students_serializable.append({
-            "student_id": s["student_id"],
-            "name": s["name"],
-            "status": s["status"],
-            "boarded_time": s["boarded_time"].isoformat() if s["boarded_time"] else None,
-            "boarded_lat": s["boarded_lat"] if s["boarded_lat"] is not None else None,
-            "boarded_lng": s["boarded_lng"] if s["boarded_lng"] is not None else None,
-            "dropoff_time": s["dropoff_time"].isoformat() if s["dropoff_time"] else None,
-            "dropoff_lat": s["dropoff_lat"] if s["dropoff_lat"] is not None else None,
-            "dropoff_lng": s["dropoff_lng"] if s["dropoff_lng"] is not None else None,
-        })
+        "student_id": s["student_id"],
+        "name": s["name"],
+        "status": s["status"],
+        "boarded_time": s["boarded_time"].isoformat() if s["boarded_time"] else None,
+        "boarded_lat": float(s["boarded_lat"]) if s["boarded_lat"] is not None else None,
+        "boarded_lng": float(s["boarded_lng"]) if s["boarded_lng"] is not None else None,
+        "dropoff_time": s["dropoff_time"].isoformat() if s["dropoff_time"] else None,
+        "dropoff_lat": float(s["dropoff_lat"]) if s["dropoff_lat"] is not None else None,
+        "dropoff_lng": float(s["dropoff_lng"]) if s["dropoff_lng"] is not None else None,
+    })
 
     # --- Ubicaciones: tomamos desde app_state.current_bus.locations ---
     locations_serializable = []
