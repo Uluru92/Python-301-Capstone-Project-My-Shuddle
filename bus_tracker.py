@@ -7,7 +7,7 @@ from mysql.connector import Error
 from pathlib import Path
 
 # importar modelos OOP
-from models import Bus, Student, BusTracker
+from models import Bus, Student, BusTracker, BusLocation
 
 # -------------------- Config --------------------
 load_dotenv()
@@ -220,15 +220,23 @@ def alight_student():
     cursor.close()
     conn.close()
 
-    # Actualizar estado local en current_bus (si lo tenemos)
+    # --- Actualizar estado local ---
     if app_state.current_bus:
+        now = datetime.now()
+
+        # 1. Actualizar estudiante en memoria
         for s in app_state.current_bus.students_onboard:
             if str(s.student_id) == str(student_id):
                 s.status = "dropped_off"
-                s.dropoff_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                s.dropoff_time = now.strftime("%Y-%m-%d %H:%M:%S")
                 s.dropoff_lat = lat
                 s.dropoff_lng = lng
                 break
+
+        # 2. Agregar el punto de bajada a la ruta del bus (para PolyLine de la ruta del bus)
+        app_state.current_bus.locations.append(
+            BusLocation(lat=float(lat), lng=float(lng), timestamp=now, plate=app_state.current_bus.plate)
+        )
 
     return jsonify({"status": "ok", "message": "Estudiante marcado como bajado"}), 200
 

@@ -580,16 +580,30 @@ def view_trips(parent_window):
             print("No hay coordenadas para este viaje")
             return
 
-        # mapa con folium
+        # Mapa con folium
         m = folium.Map(location=coords[0], zoom_start=15)
         folium.PolyLine(coords, color="blue", weight=3).add_to(m)
 
-        # opcional: agregar marcadores de subida y bajada
+        # --- Marcador único de subida ---
+        boarded_students = [st["name"] for st in data["students"] if st["boarded_time"]]
+        if boarded_students:
+            popup_text = "Estudiantes a bordo:\n" + "\n".join(boarded_students)
+            # Tomamos coordenadas del primer estudiante escaneado
+            first_boarded = next(st for st in data["students"] if st["boarded_time"])
+            folium.Marker(
+                location=[first_boarded["boarded_lat"], first_boarded["boarded_lng"]],
+                popup=popup_text,
+                icon=folium.Icon(color="green", icon="school")
+            ).add_to(m)
+
+        # --- Marcadores de bajada ---
         for st in data["students"]:
-            if st["boarded_time"]:
-                folium.Marker(coords[0], popup=f"Subida: {st['name']}").add_to(m)
             if st["dropoff_time"]:
-                folium.Marker(coords[-1], popup=f"Bajada: {st['name']}").add_to(m)
+                folium.Marker(
+                    [st["dropoff_lat"], st["dropoff_lng"]],
+                    popup=f"Bajada: {st['name']}",
+                    icon=folium.Icon(color="red", icon="home")
+                ).add_to(m)
 
         map_file = "trip_map.html"
         m.save(map_file)
