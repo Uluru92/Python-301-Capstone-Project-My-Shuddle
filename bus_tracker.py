@@ -99,7 +99,7 @@ def save_current_trip():
             "boarded_time": s["boarded_time"].isoformat() if s["boarded_time"] else None,
             "boarded_lat": s["boarded_lat"] if s["boarded_lat"] is not None else None,
             "boarded_lng": s["boarded_lng"] if s["boarded_lng"] is not None else None,
-            "dropoff_time": s["dropoff_time"].isoformat() if s["dropoff_time"] else None
+            "dropoff_time": s["dropoff_time"].isoformat() if s["dropoff_time"] else None,
             "dropoff_lat": s["dropoff_lat"] if s["dropoff_lat"] is not None else None,
             "dropoff_lng": s["dropoff_lng"] if s["dropoff_lng"] is not None else None,
         })
