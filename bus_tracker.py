@@ -80,7 +80,7 @@ def save_current_trip():
     # --- Obtener estudiantes --- (leemos desde la DB para que coincida con trip_id)
     cursor.execute("""
         SELECT ts.student_id, CONCAT(s.first_name,' ',s.last_name) AS name,
-               ts.status, ts.boarded_time, ts.dropoff_time
+               ts.status, ts.boarded_time, ts.boarded_lat, ts.boarded_lng, ts.dropoff_time,ts.dropoff_lat, ts.dropoff_lng
         FROM trip_students ts
         JOIN students s ON ts.student_id = s.student_id
         WHERE ts.trip_id = %s
@@ -97,7 +97,11 @@ def save_current_trip():
             "name": s["name"],
             "status": s["status"],
             "boarded_time": s["boarded_time"].isoformat() if s["boarded_time"] else None,
+            "boarded_lat": s["boarded_lat"] if s["boarded_lat"] is not None else None,
+            "boarded_lng": s["boarded_lng"] if s["boarded_lng"] is not None else None,
             "dropoff_time": s["dropoff_time"].isoformat() if s["dropoff_time"] else None
+            "dropoff_lat": s["dropoff_lat"] if s["dropoff_lat"] is not None else None,
+            "dropoff_lng": s["dropoff_lng"] if s["dropoff_lng"] is not None else None,
         })
 
     # --- Ubicaciones: tomamos desde app_state.current_bus.locations ---
@@ -284,7 +288,7 @@ def start_trip():
     app_state.pre_scanned_students = []  # vaciamos memoria pre-viaje una vez iniciado el viaje
 
     return jsonify({"status": "ok", "trip_id": app_state.current_trip_id, "message": "Viaje iniciado"})
-    
+
 @app.route("/get_boarded_students", methods=["GET"])
 def get_boarded_students():
     """Devuelve estudiantes a bordo: si hay trip_id -> consulta DB; si no -> pre-scanned"""
