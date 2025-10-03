@@ -1,3 +1,6 @@
+from datetime import datetime
+
+
 class Student:
     """Info about Students"""
     def __init__(self, student_id, name):
@@ -42,7 +45,7 @@ class BusLocation:
             "plate": self.plate,
             "lat": self.lat,
             "lng": self.lng,
-            "timestamp": self.timestamp,
+            "timestamp": self.timestamp.isoformat() if isinstance(self.timestamp, datetime) else self.timestamp,
         }
 
 class BusTracker:

@@ -83,8 +83,12 @@
 
         // --- Función para bajar estudiante ---
         async function alightStudent(studentId) {
+            const button = event.target; // el botón que se presionó
+            button.disabled = true; // bloquear mientras esperamos
+
             if (!trackingInterval) {
                 alert("El viaje aún no ha comenzado. No se puede bajar al estudiante.");
+                button.disabled = false;
                 return;
             }
 
@@ -94,33 +98,42 @@
                     const lng = pos.coords.longitude;
                     const timestamp = new Date().toISOString();
 
-                    const response = await fetch("/alight_student", {
-                        method: "POST",
-                        headers: {"Content-Type": "application/json"},
-                        body: JSON.stringify({
-                            student_id: studentId,
-                            lat: lat,
-                            lng: lng,
-                            timestamp: timestamp
-                        })
-                    });
+                    try {
+                        const response = await fetch("/alight_student", {
+                            method: "POST",
+                            headers: {"Content-Type": "application/json"},
+                            body: JSON.stringify({
+                                student_id: studentId,
+                                lat: lat,
+                                lng: lng,
+                                timestamp: timestamp
+                            })
+                        });
 
-                    const result = await response.json();
+                        const result = await response.json();
 
-                    if (result.status === "ok") {
-                        studentsStatusMap[studentId] = "dropped_off";
+                        if (result.status === "ok") {
+                            studentsStatusMap[studentId] = "dropped_off";
+                        }
+
+                        alert(result.message);
+                        loadStudents();
+                    } catch (err) {
+                        alert("Error al bajar estudiante: " + err.message);
+                    } finally {
+                        button.disabled = false; // volver a habilitar
                     }
-
-                    alert(result.message);
-                    loadStudents();
                 });
             } else {
                 alert("Geolocalización no soportada en este dispositivo.");
+                button.disabled = false;
             }
         }
 
         // --- Escaneo QR ---
-        document.getElementById("scanQRBtn").addEventListener("click", async () => {
+        document.getElementById("scanQRBtn").addEventListener("click", async (event) => {
+            const btn = event.target;
+            btn.disabled = true; // bloquear
             try {
                 const text = await navigator.clipboard.readText();
                 const studentData = JSON.parse(text);
@@ -147,25 +160,38 @@
                         });
 
                         const data = await res.json();
-                        if (data.status !== "ok") throw new Error(data.message);
 
-                        alert(`${studentData.name} registrado en la buseta.`);
-                        scannedStudents.push({
-                            student_id: studentData.student_id,
-                            name: studentData.name
-                        });
+                        if (data.status === "ok") {
+                            alert(`${studentData.name} registrado en la buseta.`);
+                            // Solo si es nuevo lo añadimos
+                            if (!scannedStudents.some(s => s.student_id === studentData.student_id)) {
+                                scannedStudents.push({
+                                    student_id: studentData.student_id,
+                                    name: studentData.name
+                                });
+                            }
+                        } else if (data.status === "warning") {
+                            alert(data.message); // aquí recibes "ya está escaneado"
+                        } else {
+                            throw new Error(data.message);
+                        }
+
                         loadStudents();
 
+                        btn.disabled = false; // volver a habilitar
                     }, (err) => {
                         alert("Error al obtener ubicación: " + err.message);
+                        btn.disabled = false;
                     });
                 } else {
                     alert("Geolocalización no soportada en este dispositivo.");
+                    btn.disabled = false;
                 }
 
             } catch(err){
                 alert("Error al registrar estudiante: " + err.message);
                 console.error(err);
+                btn.disabled = false;
             }
         });
 
