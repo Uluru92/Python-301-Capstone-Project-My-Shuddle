@@ -233,10 +233,17 @@ def alight_student():
                 s.dropoff_lng = lng
                 break
 
-        # 2. Agregar el punto de bajada a la ruta del bus (para PolyLine de la ruta del bus)
+        # Usar timestamp recibido desde el frontend
+        ts_str = data.get("timestamp")
         app_state.current_bus.locations.append(
-            BusLocation(lat=float(lat), lng=float(lng), timestamp=now, plate=app_state.current_bus.plate)
+            BusLocation(
+                lat=float(lat),
+                lng=float(lng),
+                timestamp=ts_str,   # <- aquí usamos el timestamp del celular
+                plate=app_state.current_bus.plate
+            )
         )
+
 
     return jsonify({"status": "ok", "message": "Estudiante marcado como bajado"}), 200
 
