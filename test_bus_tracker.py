@@ -15,5 +15,9 @@ class TestRescrape(unittest.TestCase):
         cursor.close()
         conn.close()
 
+    def test_start_new_trip(self):
+        
+        pass
+
 if __name__ == "__main__":
     unittest.main()
