@@ -4,14 +4,12 @@ from bus_tracker import *
 class TestBusTracker(unittest.TestCase):
 
     def setUp(self):
-        """Se ejecuta antes de cada test"""
-        # Guardamos el estado original por si hay que restaurarlo luego
+        """Get ready to start every test"""
         self.original_bus = getattr(app_state, "current_bus", None)
-        app_state.current_bus = None  # Asegura que empiece vacío
+        app_state.current_bus = None  # Make sure it starts empty
     
     def tearDown(self):
-        """Se ejecuta después de cada test"""
-        # Restauramos el estado original
+        """restores default value"""
         app_state.current_bus = self.original_bus
 
     def test_get_db_connection(self):
@@ -44,6 +42,23 @@ class TestBusTracker(unittest.TestCase):
 
         # test if bus is using the correct plate passed as argument
         self.assertEqual(app_state.current_bus.plate, "TEST123")
+
+        # Check if locations is a list
+        self.assertIsInstance(app_state.current_bus.locations, list)
+
+        # Check if trip_file path targets to /trips
+        self.assertTrue(app_state.current_trip_file.startswith("trips/"))
+        self.assertIn(plate, app_state.current_trip_file)
+
+        # Check if trip_in_progress is True
+        self.assertTrue(app_state.trip_in_progress)
+
+        # Check if /trips exists
+        self.assertTrue(os.path.exists("trips"))
+
+    def test_save_current_trip(self):
+        
+        pass
 
 if __name__ == "__main__":
     unittest.main()
