@@ -75,20 +75,13 @@ class TestBusTracker(unittest.TestCase):
         self.assertIsNotNone(students) 
         self.assertIsInstance(students, list) # students should be a list
         for s in students:
-            self.assertIsInstance(s, dict) # inside the list should be 1 dictionary for every student
-        
-        expected_keys = {
-                        "student_id",
-                        "name",
-                        "status",
-                        "boarded_time",
-                        "boarded_lat", "boarded_lng",
-                        "dropoff_time",
-                        "dropoff_lat",
-                        "dropoff_lng"
-                        }
-        for s in students:
-            self.assertTrue(expected_keys.issubset(s.keys()),)
+            self.assertIsInstance(s, dict)
+            expected_keys = {
+                "student_id", "name", "status",
+                "boarded_time", "boarded_lat", "boarded_lng",
+                "dropoff_time", "dropoff_lat", "dropoff_lng"
+            }
+            self.assertTrue(expected_keys.issubset(s.keys()))
 
     def test_get_locations_serializable(self):
 
