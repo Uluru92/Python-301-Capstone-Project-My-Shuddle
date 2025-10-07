@@ -126,8 +126,8 @@ def save_current_trip():
     school_name = get_school_name_by_trip(app_state.current_trip_id)
     students_serializable = get_students_by_trip(app_state.current_trip_id)
     locations_serializable = get_locations_serializable(app_state.current_bus)
-
-    # --- Preparar datos del viaje ---
+    
+    # --- trip data dictionary ---
     trip_data = {
         "trip_id": app_state.current_trip_id,
         "plate": app_state.current_bus.plate if app_state.current_bus else None,
@@ -135,7 +135,7 @@ def save_current_trip():
         "locations": locations_serializable,
         "students": students_serializable
     }
-
+    
     # --- Guardar en JSON con nuevo formato ---
     trips_dir = Path("trips")
     trips_dir.mkdir(exist_ok=True)
