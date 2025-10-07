@@ -100,6 +100,27 @@ class TestBusTracker(unittest.TestCase):
         for s in locations_serializable:
             self.assertTrue(expected_keys.issubset(s.keys()),)
 
+    def test_save_trip_json_minimal(self):
+        trip_data = {
+        "trip_id": 1,
+        "plate": "TEST123",
+        "school": None,
+        "students": [],
+        "locations": []
+    }
+
+        filename = save_trip_json(trip_data)
+
+        # check if file exists
+        self.assertTrue(filename.exists())
+
+        # check JSON keys 
+        with open(filename, "r", encoding="utf-8") as f:
+            data_loaded = json.load(f)
+        self.assertTrue(set(data_loaded.keys()) >= {"trip_id","plate","school","students","locations"})
+
+        # Limpiar
+        filename.unlink()
 
 if __name__ == "__main__":
     unittest.main()

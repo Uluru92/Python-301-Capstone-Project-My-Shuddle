@@ -116,6 +116,27 @@ def get_locations_serializable(bus):
         locations_serializable = [loc.to_dict() for loc in app_state.current_bus.locations]
     return locations_serializable
 
+def build_trip_data(trip_id, bus, school_name, students_serializable, locations_serializable):
+    return {
+        "trip_id": trip_id,
+        "plate": bus.plate if bus else None,
+        "school": school_name,
+        "locations": locations_serializable,
+        "students": students_serializable
+    }
+
+def save_trip_json(trip_data, dir_path="trips"):
+    trips_dir = Path(dir_path)
+    trips_dir.mkdir(exist_ok=True)
+    now = datetime.now()
+    date_str = now.strftime("%Y-%m-%d")
+    time_str = now.strftime("%H%M%S")
+    filename = trips_dir / f"{date_str}_{trip_data['plate']}_trip_{time_str}.json"
+
+    with open(filename, "w", encoding="utf-8") as f:
+        json.dump(trip_data, f, ensure_ascii=False, indent=4)
+
+    return filename
 
 def save_current_trip():
     """ Save current trip in a json file, using date and timestamps"""
@@ -128,21 +149,10 @@ def save_current_trip():
     locations_serializable = get_locations_serializable(app_state.current_bus)
     
     # --- trip data dictionary ---
-    trip_data = {
-        "trip_id": app_state.current_trip_id,
-        "plate": app_state.current_bus.plate if app_state.current_bus else None,
-        "school": school_name,
-        "locations": locations_serializable,
-        "students": students_serializable
-    }
-    
-    # --- Guardar en JSON con nuevo formato ---
-    trips_dir = Path("trips")
-    trips_dir.mkdir(exist_ok=True)
-    now = datetime.now()
-    date_str = now.strftime("%Y-%m-%d")
-    time_str = now.strftime("%H%M%S")
-    filename = trips_dir / f"{date_str}_{trip_data['plate']}_trip_{time_str}.json"
+    trip_data = build_trip_data(app_state.current_trip_id, app_state.current_bus, school_name, students_serializable, locations_serializable)
+
+    # --- save JSON file ---
+    filename = save_trip_json(trip_data, dir_path="trips")
 
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(trip_data, f, ensure_ascii=False, indent=4)
