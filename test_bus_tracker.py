@@ -64,7 +64,7 @@ class TestBusTracker(unittest.TestCase):
         self.assertIsNotNone(school_name)
         self.assertEqual(school_name, "Escuela Mena Mena")
         
-    def test_get_students(self):
+    def test_get_students_by_trip(self):
         # set current id to any existing trip
         app_state.current_trip_id = 1
         students = get_students_by_trip(app_state.current_trip_id)
@@ -86,6 +86,24 @@ class TestBusTracker(unittest.TestCase):
                         }
         for s in students:
             self.assertTrue(expected_keys.issubset(s.keys()),)
+
+    def test_get_locations_serializable(self):
+        locations_serializable = get_locations_serializable(app_state.current_bus)
+        self.assertIsNotNone(locations_serializable)
+        self.assertIsInstance(locations_serializable, list) # locations_serializable should be a list
+
+        for locs in locations_serializable:
+            self.assertIsInstance(locs, dict) # inside the list should be 1 dictionary for every student
+        
+        expected_keys = {
+                        "plate",
+                        "lat",
+                        "lng",
+                        "timestamp"
+                        }
+        for s in locations_serializable:
+            self.assertTrue(expected_keys.issubset(s.keys()),)
+
 
 if __name__ == "__main__":
     unittest.main()

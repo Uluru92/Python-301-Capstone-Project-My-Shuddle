@@ -89,11 +89,34 @@ def get_students_by_trip(trip):
             WHERE ts.trip_id = %s
         """, (trip,))
         students = cursor.fetchall()
-        return students
+
+        # --- Convert datetimes to strings and get floats---
+    
+        students_serializable = []
+        for s in students:
+            students_serializable.append({
+            "student_id": s["student_id"],
+            "name": s["name"],
+            "status": s["status"],
+            "boarded_time": s["boarded_time"].isoformat() if s["boarded_time"] else None,
+            "boarded_lat": float(s["boarded_lat"]) if s["boarded_lat"] is not None else None,
+            "boarded_lng": float(s["boarded_lng"]) if s["boarded_lng"] is not None else None,
+            "dropoff_time": s["dropoff_time"].isoformat() if s["dropoff_time"] else None,
+            "dropoff_lat": float(s["dropoff_lat"]) if s["dropoff_lat"] is not None else None,
+            "dropoff_lng": float(s["dropoff_lng"]) if s["dropoff_lng"] is not None else None,
+        })
+        return students_serializable
     finally:
         cursor.close()
         conn.close()
-    
+
+def get_locations_serializable(bus):
+    locations_serializable = []
+    if app_state.current_bus and app_state.current_bus.locations:
+        locations_serializable = [loc.to_dict() for loc in app_state.current_bus.locations]
+    return locations_serializable
+
+
 def save_current_trip():
     """ Save current trip in a json file, using date and timestamps"""
     if not app_state.current_trip_id:
@@ -101,27 +124,8 @@ def save_current_trip():
         return
 
     school_name = get_school_name_by_trip(app_state.current_trip_id)
-    students = get_students_by_trip(app_state.current_trip_id)
-
-    # --- Convertir datetimes a strings ---
-    students_serializable = []
-    for s in students:
-        students_serializable.append({
-        "student_id": s["student_id"],
-        "name": s["name"],
-        "status": s["status"],
-        "boarded_time": s["boarded_time"].isoformat() if s["boarded_time"] else None,
-        "boarded_lat": float(s["boarded_lat"]) if s["boarded_lat"] is not None else None,
-        "boarded_lng": float(s["boarded_lng"]) if s["boarded_lng"] is not None else None,
-        "dropoff_time": s["dropoff_time"].isoformat() if s["dropoff_time"] else None,
-        "dropoff_lat": float(s["dropoff_lat"]) if s["dropoff_lat"] is not None else None,
-        "dropoff_lng": float(s["dropoff_lng"]) if s["dropoff_lng"] is not None else None,
-    })
-
-    # --- Ubicaciones: tomamos desde app_state.current_bus.locations ---
-    locations_serializable = []
-    if app_state.current_bus and app_state.current_bus.locations:
-        locations_serializable = [loc.to_dict() for loc in app_state.current_bus.locations]
+    students_serializable = get_students_by_trip(app_state.current_trip_id)
+    locations_serializable = get_locations_serializable(app_state.current_bus)
 
     # --- Preparar datos del viaje ---
     trip_data = {
