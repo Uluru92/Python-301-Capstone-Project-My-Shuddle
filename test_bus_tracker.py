@@ -108,8 +108,7 @@ class TestBusTracker(unittest.TestCase):
         "students": [],
         "locations": []
     }
-
-        filename = save_trip_json(trip_data)
+        filename = save_filename_trip_json(trip_data)
 
         # check if file exists
         self.assertTrue(filename.exists())
@@ -119,7 +118,7 @@ class TestBusTracker(unittest.TestCase):
             data_loaded = json.load(f)
         self.assertTrue(set(data_loaded.keys()) >= {"trip_id","plate","school","students","locations"})
 
-        # Limpiar
+        # clean
         filename.unlink()
 
 if __name__ == "__main__":

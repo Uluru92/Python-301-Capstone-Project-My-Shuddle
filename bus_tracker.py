@@ -21,7 +21,7 @@ MYSQL_DB_MYSHUDDLE = os.getenv("MYSQL_DB_MYSHUDDLE")
 # -------------------- App state --------------------
 class AppState:
     def __init__(self):
-        self.bus_tracker = BusTracker()   # histórico por plate
+        self.bus_tracker = BusTracker()   # history plate
         self.current_bus = None           # Bus object cuando hay viaje 
         self.pre_scanned_students = []    # lista de Student objects antes de start_trip
         self.current_trip_id = None
@@ -110,12 +110,14 @@ def get_students_by_trip(trip):
         cursor.close()
         conn.close()
 
+# --- Get locations ---
 def get_locations_serializable(bus):
     locations_serializable = []
     if app_state.current_bus and app_state.current_bus.locations:
         locations_serializable = [loc.to_dict() for loc in app_state.current_bus.locations]
     return locations_serializable
 
+# --- trip data created ---
 def build_trip_data(trip_id, bus, school_name, students_serializable, locations_serializable):
     return {
         "trip_id": trip_id,
@@ -125,7 +127,8 @@ def build_trip_data(trip_id, bus, school_name, students_serializable, locations_
         "students": students_serializable
     }
 
-def save_trip_json(trip_data, dir_path="trips"):
+# --- Get locations ---
+def save_filename_trip_json(trip_data, dir_path="trips"):
     trips_dir = Path(dir_path)
     trips_dir.mkdir(exist_ok=True)
     now = datetime.now()
@@ -152,12 +155,12 @@ def save_current_trip():
     trip_data = build_trip_data(app_state.current_trip_id, app_state.current_bus, school_name, students_serializable, locations_serializable)
 
     # --- save JSON file ---
-    filename = save_trip_json(trip_data, dir_path="trips")
+    filename = save_filename_trip_json(trip_data, dir_path="trips")
 
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(trip_data, f, ensure_ascii=False, indent=4)
 
-    print(f"🚍 Viaje guardado: {filename}")
+    print(f"🚍 Trip saved: {filename}")
 
 # -------------------- Flask App --------------------
 app = Flask(__name__)
