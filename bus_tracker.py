@@ -58,36 +58,50 @@ def start_new_trip(plate="BUS123"):
     app_state.trip_in_progress = True
     print("🚍 Nuevo viaje iniciado:", app_state.current_trip_file)
 
+# --- Get school name ---
+def get_school_name_by_trip(trip):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT sc.school_name
+            FROM trips t
+            JOIN schools sc ON t.school_phone = sc.school_phone
+            WHERE t.trip_id = %s
+        """, (trip,))
+        school_row = cursor.fetchone()
+        school_name = school_row["school_name"] if school_row else None
+        return school_name
+    finally:
+        cursor.close()
+        conn.close()
+
+# --- Get students in trip ---
+def get_students_by_trip(trip):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT ts.student_id, CONCAT(s.first_name,' ',s.last_name) AS name,
+                ts.status, ts.boarded_time, ts.boarded_lat, ts.boarded_lng, ts.dropoff_time,ts.dropoff_lat, ts.dropoff_lng
+            FROM trip_students ts
+            JOIN students s ON ts.student_id = s.student_id
+            WHERE ts.trip_id = %s
+        """, (trip,))
+        students = cursor.fetchall()
+        return students
+    finally:
+        cursor.close()
+        conn.close()
+    
 def save_current_trip():
     """ Save current trip in a json file, using date and timestamps"""
     if not app_state.current_trip_id:
         print("There is not current trip.")
         return
 
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-
-    # --- Get school name ---
-    cursor.execute("""
-        SELECT sc.school_name
-        FROM trips t
-        JOIN schools sc ON t.school_phone = sc.school_phone
-        WHERE t.trip_id = %s
-    """, (app_state.current_trip_id,))
-    school_row = cursor.fetchone()
-    school_name = school_row["school_name"] if school_row else None
-
-    # --- Obtener estudiantes --- (leemos desde la DB para que coincida con trip_id)
-    cursor.execute("""
-        SELECT ts.student_id, CONCAT(s.first_name,' ',s.last_name) AS name,
-               ts.status, ts.boarded_time, ts.boarded_lat, ts.boarded_lng, ts.dropoff_time,ts.dropoff_lat, ts.dropoff_lng
-        FROM trip_students ts
-        JOIN students s ON ts.student_id = s.student_id
-        WHERE ts.trip_id = %s
-    """, (app_state.current_trip_id,))
-    students = cursor.fetchall()
-    cursor.close()
-    conn.close()
+    school_name = get_school_name_by_trip(app_state.current_trip_id)
+    students = get_students_by_trip(app_state.current_trip_id)
 
     # --- Convertir datetimes a strings ---
     students_serializable = []

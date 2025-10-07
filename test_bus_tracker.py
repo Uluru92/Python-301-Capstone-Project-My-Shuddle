@@ -56,30 +56,36 @@ class TestBusTracker(unittest.TestCase):
         # Check if /trips exists
         self.assertTrue(os.path.exists("trips"))
 
-    def test_get_school_name(self):
-        
+    def test_get_school_name_by_trip(self):
         # set current id to any existing trip
         app_state.current_trip_id = 1  
+        school_name = get_school_name_by_trip(app_state.current_trip_id)
 
-        # Connect to MySQL database
-        conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
-
-        cursor.execute("""
-        SELECT sc.school_name
-        FROM trips t
-        JOIN schools sc ON t.school_phone = sc.school_phone WHERE t.trip_id = %s""", (app_state.current_trip_id,))
-
-        school_row = cursor.fetchone()
-        school_name = school_row["school_name"] if school_row else None
-
-        self.assertIsNotNone(school_row) 
-        self.assertIn("school_name", school_row)
         self.assertIsNotNone(school_name)
-        self.assertEqual(school_row["school_name"], "Escuela Mena Mena")
-
-        cursor.close()
-        conn.close()
+        self.assertEqual(school_name, "Escuela Mena Mena")
         
+    def test_get_students(self):
+        # set current id to any existing trip
+        app_state.current_trip_id = 1
+        students = get_students_by_trip(app_state.current_trip_id)
+
+        self.assertIsNotNone(students) 
+        self.assertIsInstance(students, list) # students should be a list
+        for s in students:
+            self.assertIsInstance(s, dict) # inside the list should be 1 dictionary for every student
+        
+        expected_keys = {
+                        "student_id",
+                        "name",
+                        "status",
+                        "boarded_time",
+                        "boarded_lat", "boarded_lng",
+                        "dropoff_time",
+                        "dropoff_lat",
+                        "dropoff_lng"
+                        }
+        for s in students:
+            self.assertTrue(expected_keys.issubset(s.keys()),)
+
 if __name__ == "__main__":
     unittest.main()
