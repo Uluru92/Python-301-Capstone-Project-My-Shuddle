@@ -56,9 +56,30 @@ class TestBusTracker(unittest.TestCase):
         # Check if /trips exists
         self.assertTrue(os.path.exists("trips"))
 
-    def test_save_current_trip(self):
+    def test_get_school_name(self):
         
-        pass
+        # set current id to any existing trip
+        app_state.current_trip_id = 1  
 
+        # Connect to MySQL database
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute("""
+        SELECT sc.school_name
+        FROM trips t
+        JOIN schools sc ON t.school_phone = sc.school_phone WHERE t.trip_id = %s""", (app_state.current_trip_id,))
+
+        school_row = cursor.fetchone()
+        school_name = school_row["school_name"] if school_row else None
+
+        self.assertIsNotNone(school_row) 
+        self.assertIn("school_name", school_row)
+        self.assertIsNotNone(school_name)
+        self.assertEqual(school_row["school_name"], "Escuela Mena Mena")
+
+        cursor.close()
+        conn.close()
+        
 if __name__ == "__main__":
     unittest.main()
