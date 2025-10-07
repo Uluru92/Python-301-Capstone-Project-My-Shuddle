@@ -59,15 +59,15 @@ def start_new_trip(plate="BUS123"):
     print("🚍 Nuevo viaje iniciado:", app_state.current_trip_file)
 
 def save_current_trip():
-    """Guarda el viaje actual en un archivo JSON, con timestamps serializables"""
+    """ Save current trip in a json file, using date and timestamps"""
     if not app_state.current_trip_id:
-        print("No hay viaje activo para guardar.")
+        print("There is not current trip.")
         return
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    # --- Obtener nombre de la escuela ---
+    # --- Get school name ---
     cursor.execute("""
         SELECT sc.school_name
         FROM trips t
