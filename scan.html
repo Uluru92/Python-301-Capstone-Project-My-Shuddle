@@ -1,16 +1,16 @@
-<input id="qrData" placeholder='Pega aquí JSON del estudiante'>
-<button onclick="sendStudent()">Enviar estudiante</button>
+<input id="qrData" placeholder="paste student's JsSON here">
+<button onclick="sendStudent()">Send student scanned</button>
 <p id="result"></p>
 
 <script>
 async function sendStudent() {
     const raw = document.getElementById("qrData").value;
-    document.getElementById("qrData").value = ""; // limpia la caja
+    document.getElementById("qrData").value = ""; // clean qrData
     try {
-        const student = JSON.parse(raw);
+        const student = JSON.parse(raw); //text to JSON
 
-        // Validar claves mínimas
-        const requiredKeys = ["student_id", "name"];
+        // Chech keys and values
+        const requiredKeys = ["student_id", "name"]; 
         if (!requiredKeys.every(k => student.hasOwnProperty(k))) {
             throw new Error("JSON incompleto");
         }

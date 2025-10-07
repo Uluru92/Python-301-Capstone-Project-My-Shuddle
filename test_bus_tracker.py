@@ -121,5 +121,16 @@ class TestBusTracker(unittest.TestCase):
         # clean
         filename.unlink()
 
+class TestFlaskEndpoints(unittest.TestCase):
+    def setUp(self):
+        self.client = app.test_client() # test flask client
+
+    def test_home_endpoint(self):
+        """check endpoint '/' """
+        response = self.client.get("/") # request GET simulated
+        self.assertEqual(response.status_code,200)      # test if response 200 ok
+        self.assertIn(b"<html",response.data.lower())   # test if it is a html structure
+        self.assertIn(b"ngrok", response.data.lower())  # test if ngrok is passed in html
+
 if __name__ == "__main__":
     unittest.main()

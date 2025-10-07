@@ -141,6 +141,7 @@ def save_filename_trip_json(trip_data, dir_path="trips"):
 
     return filename
 
+# --- Save trip ---
 def save_current_trip():
     """ Save current trip in a json file, using date and timestamps"""
     if not app_state.current_trip_id:
