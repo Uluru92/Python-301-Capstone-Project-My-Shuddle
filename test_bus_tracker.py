@@ -126,14 +126,14 @@ class TestFlaskEndpoints(unittest.TestCase):
         self.client = app.test_client()                 # create test flask client
 
     def test_home_endpoint(self):
-        """check endpoint '/' """
+        """create a test client HTTP to check endpoint '/' """
         response = self.client.get("/")                 # request GET simulated
         self.assertEqual(response.status_code,200)      # test if response 200 ok
         self.assertIn(b"<html",response.data.lower())   # test if it is a html structure
         self.assertIn(b"ngrok", response.data.lower())  # test if ngrok is passed in html
 
     def test_scan_page(self):
-        """check endpoint '/scan.html' serves the scan.html content"""
+        """"create a test client HTTP, check if endpoint '/scan.html' serves the scan.html content"""
         response = self.client.get("/scan.html")
         data_lower = response.data.lower()              # html structure
         
@@ -142,6 +142,10 @@ class TestFlaskEndpoints(unittest.TestCase):
         self.assertIn(b"<button", data_lower)           # search for html structure
         self.assertIn(b"sendstudent", data_lower)       # async function spected
         self.assertIn(b"/board_student", data_lower)    # await fetch -> endpoint
+
+    def test_board_student(self):
+        '''Check endpoint "/board_student POST method"'''
+        
         pass
 
 if __name__ == "__main__":
