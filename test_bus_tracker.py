@@ -123,14 +123,26 @@ class TestBusTracker(unittest.TestCase):
 
 class TestFlaskEndpoints(unittest.TestCase):
     def setUp(self):
-        self.client = app.test_client() # test flask client
+        self.client = app.test_client()                 # create test flask client
 
     def test_home_endpoint(self):
         """check endpoint '/' """
-        response = self.client.get("/") # request GET simulated
+        response = self.client.get("/")                 # request GET simulated
         self.assertEqual(response.status_code,200)      # test if response 200 ok
         self.assertIn(b"<html",response.data.lower())   # test if it is a html structure
         self.assertIn(b"ngrok", response.data.lower())  # test if ngrok is passed in html
+
+    def test_scan_page(self):
+        """check endpoint '/scan.html' serves the scan.html content"""
+        response = self.client.get("/scan.html")
+        data_lower = response.data.lower()              # html structure
+        
+        self.assertEqual(response.status_code, 200)     # check response 200 ok 
+        self.assertIn(b"<input", data_lower)            # search for html structure
+        self.assertIn(b"<button", data_lower)           # search for html structure
+        self.assertIn(b"sendstudent", data_lower)       # async function spected
+        self.assertIn(b"/board_student", data_lower)    # await fetch -> endpoint
+        pass
 
 if __name__ == "__main__":
     unittest.main()
