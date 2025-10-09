@@ -176,7 +176,8 @@ def home():
 
 @app.route("/scan.html")
 def scan_page():
-    return open("scan.html").read()
+    with open("scan.html", "r", encoding="utf-8") as f:
+        return f.read()
 
 @app.route("/board_student", methods=["POST"])
 def board_student():

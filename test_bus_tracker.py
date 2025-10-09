@@ -145,7 +145,6 @@ class TestFlaskEndpoints(unittest.TestCase):
 
     def test_board_student(self):
         '''Check endpoint "/board_student POST method"'''
-        
         pass
 
 if __name__ == "__main__":
