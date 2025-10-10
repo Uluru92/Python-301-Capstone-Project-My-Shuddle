@@ -124,6 +124,13 @@ class TestBusTracker(unittest.TestCase):
 class TestFlaskEndpoints(unittest.TestCase):
     def setUp(self):
         self.client = app.test_client()                 # create test flask client
+        app_state.trip_in_progress = False
+        app_state.current_trip_id = None
+        app_state.current_bus = None
+        app_state.pre_scanned_students = [
+            Student(1, "Jimena Alvarado Araya"),
+            Student(2, "Luis Pérez")
+        ]
 
     def test_home_endpoint(self):
         """create a test client HTTP to check endpoint '/' """
@@ -144,8 +151,94 @@ class TestFlaskEndpoints(unittest.TestCase):
         self.assertIn(b"/board_student", data_lower)    # await fetch -> endpoint
 
     def test_board_student(self):
-        '''Check endpoint "/board_student POST method"'''
-        pass
+        """Check endpoint '/board_student' POST method"""
+        app_state.pre_scanned_students.clear()          # clean pre scanned memory
+        
+        payload = {                                     # Simulated data of a Student
+            "student_id": 101,
+            "name": "Jimena Alvarado Araya",
+            "lat": 9.999,
+            "lng": -85.345,
+            "timestamp": "2025-10-09T15:10:00Z"
+        }
+  
+        response = self.client.post("/board_student", json=payload) 
+        self.assertEqual(response.status_code, 200)     # check response 200 ok 
 
+        data = response.get_json()
+        self.assertEqual(data["status"], "ok")
+        self.assertEqual(data["student"]["student_id"], 101)
+        self.assertEqual(data["student"]["name"], "Jimena Alvarado Araya")
+        self.assertEqual(data["student"]["status"], "onboard")
+
+        # check if student saved in pre scanned students memory
+        self.assertTrue(any(s.student_id == 101 for s in app_state.pre_scanned_students))
+
+        # try catching error when same student sent twice
+        response2 = self.client.post("/board_student", json=payload)
+        self.assertEqual(response2.status_code, 200)
+
+        data2 = response2.get_json()
+        self.assertEqual(data2["status"], "warning")
+        self.assertIn("was already scanned", data2["message"])
+
+    def test_start_trip(self):
+        """Check endpoint '/start_trip' POST method"""
+        # fill the pre scanned memory to check endpoint /start_trip
+        app_state.pre_scanned_students = [
+            Student(1, "Jimena Alvarado Araya"),
+            Student(2, "Luis Pérez")
+        ]
+        for s in app_state.pre_scanned_students:
+            s.status = "onboard"
+            s.boarded_time = "2025-10-09 15:00:00"
+            s.boarded_lat = 9.999
+            s.boarded_lng = -85.345
+
+        # check petition response
+        response = self.client.post("/start_trip")
+        self.assertEqual(response.status_code, 200)
+
+        # check json response expected
+        data = response.get_json()
+        self.assertIn("status", data)
+        self.assertEqual(data["status"], "ok")
+        self.assertIn("trip_id", data)
+        self.assertIn("message", data)
+        self.assertIn("iniciado", data["message"].lower())
+
+        # check some atributes of app_state that should change
+        self.assertTrue(app_state.trip_in_progress)
+        self.assertIsNotNone(app_state.current_trip_id)
+        self.assertIsNotNone(app_state.current_bus)
+        self.assertEqual(len(app_state.current_bus.students_onboard), 2)
+
+        # check if pre-scanned memory is clean
+        self.assertEqual(len(app_state.pre_scanned_students), 0)
+
+    def test_start_trip_already_in_progress(self):
+        """Should not be able to start if there is an ongoing active trip"""
+        app_state.trip_in_progress = True  # Simulated trip
+
+        response = self.client.post("/start_trip")
+        self.assertEqual(response.status_code, 400)
+        data = response.get_json()
+
+        self.assertIn("status", data)
+        self.assertEqual(data["status"], "error")
+        self.assertIn("ya está en curso", data["message"])
+
+    def test_start_trip_with_no_students(self):
+        """Debe iniciar un viaje aunque no haya estudiantes preescaneados"""
+        app_state.trip_in_progress = False
+        app_state.pre_scanned_students = []
+
+        response = self.client.post("/start_trip")
+        self.assertEqual(response.status_code, 200)
+        data = response.get_json()
+
+        self.assertEqual(data["status"], "ok")
+        self.assertEqual(len(app_state.current_bus.students_onboard), 0)
+        
 if __name__ == "__main__":
     unittest.main()

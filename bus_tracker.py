@@ -190,20 +190,21 @@ def board_student():
     lng = data.get("lng")
     timestamp = data.get("timestamp")
 
-    # Verificar si ya está en memoria (pre-scanned)
+    # check if student is already in pre-scanned memory
     if any(str(s.student_id) == str(student_id) for s in app_state.pre_scanned_students):
-        return jsonify({"status": "warning", "message": f"{name} ya está escaneado"}), 200
+        return jsonify({"status": "warning", "message": f"{name} was already scanned"}), 200
 
-    # Creamos Student y le añadimos atributos de escaneo
+    # create Student object with atributes when scanned
     student = Student(student_id, name)
     student.status = "onboard"
-    student.boarded_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # formato MySQL-friendly
+    student.boarded_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # format MySQL-friendly
     student.boarded_lat = lat
     student.boarded_lng = lng
     student.dropoff_time = None
     student.dropoff_lat = None
     student.dropoff_lng = None
 
+    # save student in pre scanned memory
     app_state.pre_scanned_students.append(student)
     print(f"🟢 Estudiante {name} registrado en memoria (pre-viaje)")
     return jsonify({
@@ -220,6 +221,63 @@ def board_student():
             "dropoff_lng": student.dropoff_lng
         }
     })
+
+@app.route("/start_trip", methods=["POST"])
+def start_trip():
+    """Inicia viaje: crea registro en DB, inserta trip_students y crea Bus en memoria"""
+    if app_state.trip_in_progress:
+        return jsonify({"status": "error", "message": "El viaje ya está en curso"}), 400
+
+    # To improve in the future: parametrizar plate y school_phone en futuro (por ahora placeholders)
+    current_plate = "BUS123"
+    school_phone = "26599085"
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        # Insertar viaje
+        cursor.execute("""
+            INSERT INTO trips (plate, school_phone, trip_date, departure_time)
+            VALUES (%s, %s, CURDATE(), CURTIME())
+        """, (current_plate, school_phone))
+        conn.commit()
+        current_trip_id = cursor.lastrowid
+        app_state.current_trip_id = current_trip_id
+
+        # Crear objeto Bus y añadir estudiantes escaneados
+        bus = Bus(current_plate)
+
+        for s in app_state.pre_scanned_students:
+
+            # Insertar en trip_students (con boarded_time ya en formato MySQL)
+            cursor.execute("""
+                INSERT INTO trip_students (
+                    trip_id, student_id, status, boarded_time, boarded_lat, boarded_lng
+                ) VALUES (%s, %s, %s, %s, %s, %s)
+            """, (app_state.current_trip_id, s.student_id, s.status, s.boarded_time, s.boarded_lat, s.boarded_lng))
+
+            # añadir al objeto bus
+            bus.board_student(s)
+
+        conn.commit()
+        print(f"🚍 Viaje iniciado con {len(bus.students_onboard)} estudiantes (trip_id={app_state.current_trip_id})")
+    except Exception as e:
+        conn.rollback()
+        print("Error al iniciar viaje:", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+    # inicializar tracking en memoria
+    app_state.current_bus = bus
+    app_state.bus_tracker.coords_by_bus.setdefault(current_plate, [])
+    start_new_trip(plate=current_plate)
+    app_state.trip_in_progress = True
+    app_state.pre_scanned_students = []  # vaciamos memoria pre-viaje una vez iniciado el viaje
+
+    return jsonify({"status": "ok", "trip_id": app_state.current_trip_id, "message": "Viaje iniciado"})
 
 @app.route("/alight_student", methods=["POST"])
 def alight_student():
@@ -279,63 +337,6 @@ def alight_student():
 
 
     return jsonify({"status": "ok", "message": "Estudiante marcado como bajado"}), 200
-
-@app.route("/start_trip", methods=["POST"])
-def start_trip():
-    """Inicia viaje: crea registro en DB, inserta trip_students y crea Bus en memoria"""
-    if app_state.trip_in_progress:
-        return jsonify({"status": "error", "message": "El viaje ya está en curso"}), 400
-
-    # To improve in the future: parametrizar plate y school_phone en futuro (por ahora placeholders)
-    current_plate = "BUS123"
-    school_phone = "26599085"
-
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    try:
-        # Insertar viaje
-        cursor.execute("""
-            INSERT INTO trips (plate, school_phone, trip_date, departure_time)
-            VALUES (%s, %s, CURDATE(), CURTIME())
-        """, (current_plate, school_phone))
-        conn.commit()
-        current_trip_id = cursor.lastrowid
-        app_state.current_trip_id = current_trip_id
-
-        # Crear objeto Bus y añadir estudiantes escaneados
-        bus = Bus(current_plate)
-
-        for s in app_state.pre_scanned_students:
-
-            # Insertar en trip_students (con boarded_time ya en formato MySQL)
-            cursor.execute("""
-                INSERT INTO trip_students (
-                    trip_id, student_id, status, boarded_time, boarded_lat, boarded_lng
-                ) VALUES (%s, %s, %s, %s, %s, %s)
-            """, (app_state.current_trip_id, s.student_id, s.status, s.boarded_time, s.boarded_lat, s.boarded_lng))
-
-            # añadir al objeto bus
-            bus.board_student(s)
-
-        conn.commit()
-        print(f"🚍 Viaje iniciado con {len(bus.students_onboard)} estudiantes (trip_id={app_state.current_trip_id})")
-    except Exception as e:
-        conn.rollback()
-        print("Error al iniciar viaje:", e)
-        return jsonify({"status": "error", "message": str(e)}), 500
-    finally:
-        cursor.close()
-        conn.close()
-
-    # inicializar tracking en memoria
-    app_state.current_bus = bus
-    app_state.bus_tracker.coords_by_bus.setdefault(current_plate, [])
-    start_new_trip(plate=current_plate)
-    app_state.trip_in_progress = True
-    app_state.pre_scanned_students = []  # vaciamos memoria pre-viaje una vez iniciado el viaje
-
-    return jsonify({"status": "ok", "trip_id": app_state.current_trip_id, "message": "Viaje iniciado"})
 
 @app.route("/get_boarded_students", methods=["GET"])
 def get_boarded_students():
