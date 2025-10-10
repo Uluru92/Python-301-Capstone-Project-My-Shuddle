@@ -12,7 +12,7 @@
     <button id="startBtn" disabled>Start Trip</button>
     <button id="stopBtn" disabled>Stop Trip</button>
 
-    <h2>Estudiantes a bordo</h2>
+    <h2>Students on board</h2>
     <div id="studentsList"></div>
 
     <script>
@@ -24,19 +24,19 @@
 
         let scannedStudents = [];  
         let trackingInterval = null;
-        let studentsStatusMap = {}; // guarda estado de cada estudiante
+        let studentsStatusMap = {}; // save every student state
 
-        // --- Función para actualizar la lista de estudiantes ---
+        // --- Update student list ---
         async function loadStudents() {
             const response = await fetch("/get_boarded_students");
             const studentsFromServer = await response.json();
 
-            // Combinar estudiantes escaneados pre-viaje y los del servidor
+            // Combinar pre scanned students and those in the server
             const allStudents = [...new Map(
                 [...scannedStudents, ...studentsFromServer].map(s => [s.student_id, s])
             ).values()];
 
-            // Actualizar el mapa de estado
+            
             allStudents.forEach(s => {
                 if (!studentsStatusMap[s.student_id]) {
                     studentsStatusMap[s.student_id] = s.status || "onboard";
@@ -63,11 +63,11 @@
 
                 if (status === "dropped_off") {
                     div.innerHTML = `<button style="background-color: green; color: white;" disabled>
-                                        ✅ ${student.name} ya se bajó del bus
+                                        ✅ ${student.name} Dropped off already.
                                      </button>`;
                 } else {
                     div.innerHTML = `<button onclick="alightStudent('${student.student_id}')">
-                                        ⬇️ ${student.name} - Bajar
+                                        ⬇️ ${student.name} - Drop
                                      </button>`;
                     allDroppedOff = false;
                 }
@@ -75,19 +75,18 @@
                 container.appendChild(div);
             });
 
-            // Botones de control
+            // Buttoms Start and Stop
             const hasOnboard = Object.values(studentsStatusMap).some(s => s === "onboard");
             document.getElementById("startBtn").disabled = !hasOnboard || trackingInterval !== null;
             document.getElementById("stopBtn").disabled = !allDroppedOff;
         }
 
-        // --- Función para bajar estudiante ---
+        // --- Function to drop students ---
         async function alightStudent(studentId) {
-            const button = event.target; // el botón que se presionó
-            button.disabled = true; // bloquear mientras esperamos
-
+            const button = event.target; // buttom pushed
+            button.disabled = true; // disable button while waiting for new student scanned boards
             if (!trackingInterval) {
-                alert("El viaje aún no ha comenzado. No se puede bajar al estudiante.");
+                alert("The trip hasn't started yet. The student can't be dropped off.");
                 button.disabled = false;
                 return;
             }
@@ -121,7 +120,7 @@
                     } catch (err) {
                         alert("Error al bajar estudiante: " + err.message);
                     } finally {
-                        button.disabled = false; // volver a habilitar
+                        button.disabled = false; // able buttom
                     }
                 });
             } else {
@@ -130,17 +129,17 @@
             }
         }
 
-        // --- Escaneo QR ---
+        // --- Scan QR ---
         document.getElementById("scanQRBtn").addEventListener("click", async (event) => {
             const btn = event.target;
-            btn.disabled = true; // bloquear
+            btn.disabled = true; // disable buttom while getting a response to avoid stacking errors
             try {
                 const text = await navigator.clipboard.readText();
                 const studentData = JSON.parse(text);
 
                 const requiredKeys = ["student_id", "name"];
                 if (!requiredKeys.every(k => studentData.hasOwnProperty(k))) {
-                    throw new Error("Datos incompletos en el clipboard");
+                    throw new Error("Missing data from clipboard");
                 }
 
                 if (navigator.geolocation) {

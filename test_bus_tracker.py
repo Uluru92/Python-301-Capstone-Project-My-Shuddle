@@ -131,7 +131,7 @@ class TestFlaskEndpoints(unittest.TestCase):
             Student(1, "Jimena Alvarado Araya"),
             Student(2, "Luis Pérez")
         ]
-
+        
     def test_home_endpoint(self):
         """create a test client HTTP to check endpoint '/' """
         response = self.client.get("/")                 # request GET simulated
@@ -229,16 +229,18 @@ class TestFlaskEndpoints(unittest.TestCase):
         self.assertIn("ya está en curso", data["message"])
 
     def test_start_trip_with_no_students(self):
-        """Debe iniciar un viaje aunque no haya estudiantes preescaneados"""
+        """should not initiate a trip without pre scanned students memory"""
         app_state.trip_in_progress = False
         app_state.pre_scanned_students = []
 
         response = self.client.post("/start_trip")
-        self.assertEqual(response.status_code, 200)
-        data = response.get_json()
-
-        self.assertEqual(data["status"], "ok")
-        self.assertEqual(len(app_state.current_bus.students_onboard), 0)
+        self.assertEqual(response.status_code, 400)
         
+        data = response.get_json()
+        self.assertEqual(data["status"], "error")
+        self.assertIn("There are no students on board, cannot start the trip", data["message"])
+
+    def test_
+
 if __name__ == "__main__":
     unittest.main()

@@ -225,10 +225,14 @@ def board_student():
 @app.route("/start_trip", methods=["POST"])
 def start_trip():
     """Inicia viaje: crea registro en DB, inserta trip_students y crea Bus en memoria"""
+    
     if app_state.trip_in_progress:
         return jsonify({"status": "error", "message": "El viaje ya está en curso"}), 400
+    
+    if not app_state.pre_scanned_students:
+        return jsonify({"status": "error", "message": "There are no students on board, cannot start the trip"}), 400
 
-    # To improve in the future: parametrizar plate y school_phone en futuro (por ahora placeholders)
+    # To improve in the future: integrate plate and school_phone
     current_plate = "BUS123"
     school_phone = "26599085"
 
@@ -236,7 +240,7 @@ def start_trip():
     cursor = conn.cursor()
 
     try:
-        # Insertar viaje
+        # insert trip
         cursor.execute("""
             INSERT INTO trips (plate, school_phone, trip_date, departure_time)
             VALUES (%s, %s, CURDATE(), CURTIME())
@@ -245,58 +249,57 @@ def start_trip():
         current_trip_id = cursor.lastrowid
         app_state.current_trip_id = current_trip_id
 
-        # Crear objeto Bus y añadir estudiantes escaneados
+        # Create Bus object and add scanned students
         bus = Bus(current_plate)
 
         for s in app_state.pre_scanned_students:
 
-            # Insertar en trip_students (con boarded_time ya en formato MySQL)
+            # Insert in trip_students (with boarded_time in MySQL format)
             cursor.execute("""
                 INSERT INTO trip_students (
                     trip_id, student_id, status, boarded_time, boarded_lat, boarded_lng
                 ) VALUES (%s, %s, %s, %s, %s, %s)
             """, (app_state.current_trip_id, s.student_id, s.status, s.boarded_time, s.boarded_lat, s.boarded_lng))
-
-            # añadir al objeto bus
-            bus.board_student(s)
-
+            bus.board_student(s)    # board student object to bus object
         conn.commit()
         print(f"🚍 Viaje iniciado con {len(bus.students_onboard)} estudiantes (trip_id={app_state.current_trip_id})")
+
     except Exception as e:
         conn.rollback()
         print("Error al iniciar viaje:", e)
         return jsonify({"status": "error", "message": str(e)}), 500
+    
     finally:
         cursor.close()
         conn.close()
 
-    # inicializar tracking en memoria
+    # clean memory
     app_state.current_bus = bus
     app_state.bus_tracker.coords_by_bus.setdefault(current_plate, [])
     start_new_trip(plate=current_plate)
-    app_state.trip_in_progress = True
-    app_state.pre_scanned_students = []  # vaciamos memoria pre-viaje una vez iniciado el viaje
+    app_state.trip_in_progress = True    # update trip status
+    app_state.pre_scanned_students = []  # clean pre scanned memory at the start trip
 
     return jsonify({"status": "ok", "trip_id": app_state.current_trip_id, "message": "Viaje iniciado"})
 
 @app.route("/alight_student", methods=["POST"])
 def alight_student():
-    """Marca a un estudiante como dropped_off (DB) y actualiza estado local si aplica"""
+    """Mark student as dropped_off (DB)"""
     data = request.get_json()
     student_id = data.get("student_id")
     lat = data.get("lat")
     lng = data.get("lng")
 
     if not student_id:
-        return jsonify({"status": "error", "message": "No se proporcionó student_id"}), 400
+        return jsonify({"status": "error", "message": "student_id not founded"}), 400
 
     if not app_state.trip_in_progress or not app_state.current_trip_id:
         return jsonify({
             "status": "error",
-            "message": "El viaje aún no ha iniciado. No puedes bajar estudiantes."
+            "message": "The trip did not start yet. Students cannot be dropped off now."
         }), 400
 
-    # Actualizar DB
+    # Update DB
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("""
@@ -311,11 +314,11 @@ def alight_student():
     cursor.close()
     conn.close()
 
-    # --- Actualizar estado local ---
+    # --- Update local state ---
     if app_state.current_bus:
         now = datetime.now()
 
-        # 1. Actualizar estudiante en memoria
+        # 1. Update student in memory
         for s in app_state.current_bus.students_onboard:
             if str(s.student_id) == str(student_id):
                 s.status = "dropped_off"
@@ -324,24 +327,23 @@ def alight_student():
                 s.dropoff_lng = lng
                 break
 
-        # Usar timestamp recibido desde el frontend
+        # timestamp from frontend
         ts_str = data.get("timestamp")
         app_state.current_bus.locations.append(
             BusLocation(
                 lat=float(lat),
                 lng=float(lng),
-                timestamp=ts_str,   # <- aquí usamos el timestamp del celular
+                timestamp=ts_str,   # <-timestamp from cell phone
                 plate=app_state.current_bus.plate
             )
         )
-
 
     return jsonify({"status": "ok", "message": "Estudiante marcado como bajado"}), 200
 
 @app.route("/get_boarded_students", methods=["GET"])
 def get_boarded_students():
-    """Devuelve estudiantes a bordo: si hay trip_id -> consulta DB; si no -> pre-scanned"""
-    if app_state.current_trip_id:
+    '''get boarded students: if there is trip_id -> from DB; if not -> pre-scanned memory'''
+    if app_state.current_trip_id: # If trip exists look into the Data Base
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         cursor.execute("""
@@ -355,7 +357,7 @@ def get_boarded_students():
         conn.close()
         return jsonify(students)
     else:
-        # devolver pre-scanned desde memoria
+        # If trip does not exists yet, return pre-scanned memory
         out = []
         for s in app_state.pre_scanned_students:
             out.append({
