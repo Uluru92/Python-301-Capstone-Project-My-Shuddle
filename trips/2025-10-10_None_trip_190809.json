@@ -1,0 +1,19 @@
+{
+    "trip_id": 1000,
+    "plate": null,
+    "school": "Test School",
+    "locations": [],
+    "students": [
+        {
+            "student_id": 2000,
+            "name": "Fictional Student",
+            "status": "dropped_off",
+            "boarded_time": null,
+            "boarded_lat": null,
+            "boarded_lng": null,
+            "dropoff_time": null,
+            "dropoff_lat": null,
+            "dropoff_lng": null
+        }
+    ]
+}

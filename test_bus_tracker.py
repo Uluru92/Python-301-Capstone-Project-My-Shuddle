@@ -182,6 +182,23 @@ class TestFlaskEndpoints(unittest.TestCase):
         self.assertEqual(data2["status"], "warning")
         self.assertIn("was already scanned", data2["message"])
 
+    def test_get_boarded_students_no_trip(self):
+        """Should return pre-scanned students if no trip active"""
+        app_state.trip_in_progress = False
+        app_state.pre_scanned_students = [
+            Student(10, "Mario López"),
+            Student(11, "Lucía Vargas")
+        ]
+
+        res = self.client.get("/get_boarded_students")
+        data = res.get_json()
+
+        # check status code, list pre scanned students memory
+        self.assertEqual(res.status_code, 200)
+        self.assertIsInstance(data, list)
+        self.assertEqual(len(data), 2)
+        self.assertIn("Mario López", [s["name"] for s in data])
+
     def test_start_trip(self):
         """Check endpoint '/start_trip' POST method"""
         # fill the pre scanned memory to check endpoint /start_trip
@@ -240,7 +257,114 @@ class TestFlaskEndpoints(unittest.TestCase):
         self.assertEqual(data["status"], "error")
         self.assertIn("There are no students on board, cannot start the trip", data["message"])
 
-    def test_
+    def test_stop_trip_success(self):
+        """Create a fictional trip without students onboard"""
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # creates fictional school
+        cursor.execute("""
+            INSERT IGNORE INTO schools (school_phone, school_name, school_address)
+            VALUES ('12345678', 'Test School', '123 Test Street')
+        """)
+
+        # creates fictional bus
+        cursor.execute("""
+            INSERT IGNORE INTO buses (plate, driver_name, driver_phone, attendant_name, attendant_phone)
+            VALUES ('BUS-002', 'Test Driver', '88888888', 'Test Attendant', '77777777')
+        """)
+
+        # creates fictional student
+        cursor.execute("""
+            INSERT IGNORE INTO students (student_id, parent_email, first_name, last_name, birth_date, school_phone)
+            VALUES (2000, NULL, 'Fictional', 'Student', '2015-01-01', '12345678')
+        """)
+
+        # creates fictional trip
+        cursor.execute("""
+            INSERT INTO trips (trip_id, plate, school_phone, trip_date, departure_time)
+            VALUES (1000, 'BUS-002', '12345678', CURDATE(), CURTIME())
+        """)
+
+        # create a dropped off student
+        cursor.execute("""
+            INSERT INTO trip_students (trip_id, student_id, status)
+            VALUES (1000, 2000, 'dropped_off')
+        """)
+
+        conn.commit()
+
+        # simulate trip in progress
+        app_state.trip_in_progress = True
+        app_state.current_trip_id = 1000
+
+        # execute endpoint
+        res = self.client.post("/stop_trip")
+        data = res.get_json()
+
+        # check data received
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data["status"], "ok")
+        self.assertIn("Trip stopped.", data["message"])
+        self.assertFalse(app_state.trip_in_progress)
+        self.assertIsNone(app_state.current_trip_id)
+
+        # clean data before finishing
+        cursor.execute("DELETE FROM trip_students WHERE trip_id = 1000")
+        cursor.execute("DELETE FROM trips WHERE trip_id = 1000")
+        cursor.execute("DELETE FROM students WHERE student_id = 2000")
+        cursor.execute("DELETE FROM buses WHERE plate = 'BUS-002'")
+        cursor.execute("DELETE FROM schools WHERE school_phone = '12345678'")
+        conn.commit()
+
+        cursor.close()
+        conn.close()
+
+    def test_alight_student(self):
+        """Check endpoint '/alight_student' POST method"""
+        # simulates a current trip with a studiante on board
+        app_state.trip_in_progress = True
+        app_state.current_trip_id = 500
+        student = Student(1, "Jimena Alvarado Araya")
+        student.status = "onboard"
+        app_state.current_bus = Bus("BUS-001")
+        app_state.current_bus.students_onboard = [student]
+
+        payload = {
+            "student_id": 1,
+            "lat": 9.999,
+            "lng": -85.345,
+            "timestamp": "2025-10-10T15:30:00Z"
+        }
+
+        res = self.client.post("/alight_student", json=payload)
+        data = res.get_json()
+
+        # check status codes, status and message received
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data["status"], "ok")
+        self.assertIn("Student dropped off", data["message"])
+        self.assertEqual(app_state.current_bus.students_onboard[0].status, "dropped_off")
+
+    def test_location_endpoint(self):
+        """Check endpoint '/location' adds new coordinates"""
+        app_state.trip_in_progress = True
+        app_state.current_bus = Bus("BUS-LOC-01")
+
+        payload = {
+            "lat": 9.888,
+            "lng": -85.333,
+            "timestamp": "2025-10-10T15:45:00Z"
+        }
+
+        res = self.client.post("/location", json=payload)
+        data = res.get_json()
+
+        # check status code, status, plate, locations
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data["status"], "ok")
+        self.assertEqual(data["plate"], "BUS-LOC-01")
+        self.assertEqual(len(app_state.current_bus.locations), 1)
 
 if __name__ == "__main__":
     unittest.main()

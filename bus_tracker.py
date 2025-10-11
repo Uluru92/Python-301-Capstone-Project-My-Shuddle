@@ -338,7 +338,7 @@ def alight_student():
             )
         )
 
-    return jsonify({"status": "ok", "message": "Estudiante marcado como bajado"}), 200
+    return jsonify({"status": "ok", "message": "Student dropped off"}), 200
 
 @app.route("/get_boarded_students", methods=["GET"])
 def get_boarded_students():
@@ -371,14 +371,14 @@ def get_boarded_students():
 
 @app.route("/stop_trip", methods=["POST"])
 def stop_trip():
-    """Detiene viaje si no quedan estudiantes a bordo; actualiza DB y guarda JSON"""
+    """stops trip if there are no students onbard; updates DB and save JSON"""
     if not app_state.trip_in_progress or not app_state.current_trip_id:
-        return jsonify({"status": "error", "message": "No hay viaje en curso"}), 400
+        return jsonify({"status": "error", "message": "No current trip"}), 400
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    # Verificar si aún quedan estudiantes a bordo
+    # check if there are students onboard
     cursor.execute("""
         SELECT COUNT(*) AS onboard_count
         FROM trip_students
@@ -389,9 +389,9 @@ def stop_trip():
     if onboard_count > 0:
         cursor.close()
         conn.close()
-        return jsonify({"status": "error", "message": "No se puede detener el viaje: aún hay estudiantes a bordo"}), 400
+        return jsonify({"status": "error", "message": "There are students onboard. The trip cannot be stopped"}), 400
 
-    # ✅ Si ya no quedan estudiantes, cerrar viaje
+    # save arrival time before stop trip
     cursor.execute("""
         UPDATE trips
         SET arrival_time = CURTIME()
@@ -401,43 +401,51 @@ def stop_trip():
     cursor.close()
     conn.close()
 
+    # stop trip without students on board.
     app_state.trip_in_progress = False
-    # Guardar JSON con la info tomada desde app_state.current_bus
+    # save JSON with current trip information
     save_current_trip()
 
-    # limpiar estado actual
+    # restore app state flags
+    app_state.trip_in_progress = False
     app_state.current_trip_id = None
     app_state.current_bus = None
     app_state.current_trip_file = None
 
-    return jsonify({"status": "ok", "message": "Viaje detenido"}), 200
+    return jsonify({"status": "ok", "message": "Trip stopped."}), 200
 
 @app.route("/location", methods=["POST"])
 def location():
-    """Agrega coordenadas al viaje en curso con hora local de Costa Rica"""
+    """add coords to current trip with local Costa Rica time"""
     if not app_state.trip_in_progress or not app_state.current_bus:
-        return jsonify({"status": "error", "message": "No hay viaje en curso"}), 400
+        return jsonify({"status": "error", "message": "No current trip"}), 400
 
     data = request.get_json()
     required_keys = {"lat", "lng", "timestamp"}
     if not data or not required_keys.issubset(data.keys()):
-        print("📱 Datos recibidos del celular (faltan claves):", data)
-        return jsonify({"status": "error", "message": "Faltan datos"}), 400
+        print("📱 Missing data:", data)
+        return jsonify({"status": "error", "message": "Missing data"}), 400
 
     lat = data["lat"]
     lng = data["lng"]
     timestamp = data["timestamp"]
 
-    # añadir al Bus (memoria) y al BusTracker (histórico por plate)
+    # add locations to bus and BusTracker
     app_state.current_bus.add_location(lat, lng, timestamp)
     app_state.bus_tracker.add_location(app_state.current_bus.plate, lat, lng, timestamp)
 
     print(f"Latitude: {lat} Longitude: {lng} Time: {timestamp} (plate={app_state.current_bus.plate})")
-    return jsonify({"status": "ok"}), 200
+    return jsonify({
+                "status": "ok",
+                "plate": app_state.current_bus.plate,
+                "lat": lat,
+                "lng": lng,
+                "timestamp": timestamp
+            }), 200
 
 @app.route("/map")
 def show_map():
-    """Devuelve un mapa HTML con la ruta y los markers (usa folium y app_state.current_bus)"""
+    """HTML map with the trip route and markers (using folium and app_state.current_bus)"""
     if app_state.current_bus and app_state.current_bus.locations:
         center = (app_state.current_bus.locations[-1].lat, app_state.current_bus.locations[-1].lng)
     else:
