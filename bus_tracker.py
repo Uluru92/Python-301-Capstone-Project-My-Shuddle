@@ -1,5 +1,5 @@
 import os, json, folium, mysql.connector
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -163,6 +163,17 @@ def save_current_trip():
 
     print(f"🚍 Trip saved: {filename}")
 
+# --- Costa Rica timezone ---
+def to_cr_time_str(ts_str):
+    """Convierte timestamp UTC (con Z) a hora Costa Rica en formato ISO sin Z"""
+    if ts_str is None:
+        return None
+    # parse UTC
+    utc_dt = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
+    # restar 6 horas
+    cr_dt = utc_dt - timedelta(hours=6)
+    # formato ISO sin Z
+    return cr_dt.strftime("%Y-%m-%dT%H:%M:%S")
 # -------------------- Flask App --------------------
 app = Flask(__name__)
 CORS(app)  # habilita CORS para que el navegador pueda enviar POST
@@ -197,7 +208,8 @@ def board_student():
     # create Student object with atributes when scanned
     student = Student(student_id, name)
     student.status = "onboard"
-    student.boarded_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # format MySQL-friendly
+    student.boarded_time_mysql = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    student.boarded_time = to_cr_time_str(data.get("timestamp") or datetime.utcnow().isoformat())
     student.boarded_lat = lat
     student.boarded_lng = lng
     student.dropoff_time = None
@@ -329,11 +341,14 @@ def alight_student():
 
         # timestamp from frontend
         ts_str = data.get("timestamp")
+        local_ts_str = to_cr_time_str(ts_str)
+
+        # guardar en memoria
         app_state.current_bus.locations.append(
             BusLocation(
                 lat=float(lat),
                 lng=float(lng),
-                timestamp=ts_str,   # <-timestamp from cell phone
+                timestamp=local_ts_str,
                 plate=app_state.current_bus.plate
             )
         )
@@ -430,9 +445,12 @@ def location():
     lng = data["lng"]
     timestamp = data["timestamp"]
 
+    # --- timestamp UTC to Costa Rica timezone ---
+    local_ts_str = to_cr_time_str(timestamp)
+
     # add locations to bus and BusTracker
-    app_state.current_bus.add_location(lat, lng, timestamp)
-    app_state.bus_tracker.add_location(app_state.current_bus.plate, lat, lng, timestamp)
+    app_state.current_bus.add_location(lat, lng, local_ts_str)
+    app_state.bus_tracker.add_location(app_state.current_bus.plate, lat, lng, local_ts_str)
 
     print(f"Latitude: {lat} Longitude: {lng} Time: {timestamp} (plate={app_state.current_bus.plate})")
     return jsonify({

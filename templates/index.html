@@ -27,62 +27,74 @@
         let studentsStatusMap = {}; // save every student state
 
         // --- Update student list ---
+        let loadingStudents = false;
         async function loadStudents() {
-            const response = await fetch("/get_boarded_students");
-            const studentsFromServer = await response.json();
+            if (loadingStudents) return;
+            loadingStudents = true;
+            try {
+                const response = await fetch("/get_boarded_students");
+                const studentsFromServer = await response.json();
 
-            // Combinar pre scanned students and those in the server
-            const allStudents = [...new Map(
-                [...scannedStudents, ...studentsFromServer].map(s => [s.student_id, s])
-            ).values()];
+                // Combinar pre scanned students and those in the server
+                const allStudents = [...new Map(
+                    [...scannedStudents, ...studentsFromServer].map(s => [s.student_id, s])
+                ).values()];
 
+                
+                allStudents.forEach(s => {
+                    if (!studentsStatusMap[s.student_id]) {
+                        studentsStatusMap[s.student_id] = s.status || "onboard";
+                    } else {
+                        studentsStatusMap[s.student_id] = s.status || studentsStatusMap[s.student_id];
+                    }
+                });
+
+                const container = document.getElementById("studentsList");
+                container.innerHTML = "";
+
+                if (allStudents.length === 0) {
+                    container.innerHTML = "<p>No students on board</p>";
+                    document.getElementById("startBtn").disabled = true;
+                    document.getElementById("stopBtn").disabled = true;
+                    return;
+                }
+
+                let allDroppedOff = true;
+
+                allStudents.forEach(student => {
+                    const div = document.createElement("div");
+                    const status = studentsStatusMap[student.student_id];
+
+                    if (status === "dropped_off") {
+                        div.innerHTML = `<button style="background-color: green; color: white;" disabled>
+                                            ✅ ${student.name} Dropped off already.
+                                        </button>`;
+                    } else {
+                        div.innerHTML = `<button onclick="alightStudent('${student.student_id}')">
+                                            ⬇️ ${student.name} - Drop
+                                        </button>`;
+                        allDroppedOff = false;
+                    }
+
+                    container.appendChild(div);
+                });
+
+                // Buttoms Start and Stop
+                const hasOnboard = Object.values(studentsStatusMap).some(s => s === "onboard");
+                document.getElementById("startBtn").disabled = !hasOnboard || trackingInterval !== null;
+                document.getElementById("stopBtn").disabled = !allDroppedOff;
             
-            allStudents.forEach(s => {
-                if (!studentsStatusMap[s.student_id]) {
-                    studentsStatusMap[s.student_id] = s.status || "onboard";
-                } else {
-                    studentsStatusMap[s.student_id] = s.status || studentsStatusMap[s.student_id];
-                }
-            });
-
-            const container = document.getElementById("studentsList");
-            container.innerHTML = "";
-
-            if (allStudents.length === 0) {
-                container.innerHTML = "<p>No students on board</p>";
-                document.getElementById("startBtn").disabled = true;
-                document.getElementById("stopBtn").disabled = true;
-                return;
-            }
-
-            let allDroppedOff = true;
-
-            allStudents.forEach(student => {
-                const div = document.createElement("div");
-                const status = studentsStatusMap[student.student_id];
-
-                if (status === "dropped_off") {
-                    div.innerHTML = `<button style="background-color: green; color: white;" disabled>
-                                        ✅ ${student.name} Dropped off already.
-                                     </button>`;
-                } else {
-                    div.innerHTML = `<button onclick="alightStudent('${student.student_id}')">
-                                        ⬇️ ${student.name} - Drop
-                                     </button>`;
-                    allDroppedOff = false;
-                }
-
-                container.appendChild(div);
-            });
-
-            // Buttoms Start and Stop
-            const hasOnboard = Object.values(studentsStatusMap).some(s => s === "onboard");
-            document.getElementById("startBtn").disabled = !hasOnboard || trackingInterval !== null;
-            document.getElementById("stopBtn").disabled = !allDroppedOff;
+                } catch(err) {
+            console.error(err);
+        } finally {
+            loadingStudents = false;
         }
+    }
+                
 
         // --- Function to drop students ---
         async function alightStudent(studentId) {
+            
             const button = event.target; // buttom pushed
             button.disabled = true; // disable button while waiting for new student scanned boards
             if (!trackingInterval) {
@@ -113,6 +125,7 @@
 
                         if (result.status === "ok") {
                             studentsStatusMap[studentId] = "dropped_off";
+                            await loadStudents()
                         }
 
                         alert(result.message);
@@ -132,64 +145,63 @@
         // --- Scan QR ---
         document.getElementById("scanQRBtn").addEventListener("click", async (event) => {
             const btn = event.target;
-            btn.disabled = true; // disable buttom while getting a response to avoid stacking errors
+            btn.disabled = true;
             try {
                 const text = await navigator.clipboard.readText();
                 const studentData = JSON.parse(text);
-
                 const requiredKeys = ["student_id", "name"];
-                if (!requiredKeys.every(k => studentData.hasOwnProperty(k))) {
-                    throw new Error("Missing data from clipboard");
+                if (!requiredKeys.every(k => studentData.hasOwnProperty(k))) throw new Error("Missing data from clipboard");
+
+                // 🔹 Revisar localmente antes de geolocalización
+                if (scannedStudents.some(s => s.student_id == studentData.student_id)) {
+                    alert(`${studentData.name} was already scanned`);
+                    btn.disabled = false;
+                    return;
                 }
 
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(async (pos) => {
-                        const locationData = {
-                            student_id: studentData.student_id,
-                            name: studentData.name,
-                            lat: pos.coords.latitude,
-                            lng: pos.coords.longitude,
-                            timestamp: new Date().toISOString()
-                        };
+                // ✅ Nuevo estudiante: obtener geolocalización
+                if (!navigator.geolocation) {
+                    alert("Geolocalización no soportada en este dispositivo.");
+                    btn.disabled = false;
+                    return;
+                }
 
+                navigator.geolocation.getCurrentPosition(async (pos) => {
+                    const locationData = {
+                        student_id: studentData.student_id,
+                        name: studentData.name,
+                        lat: pos.coords.latitude,
+                        lng: pos.coords.longitude,
+                        timestamp: new Date().toISOString()
+                    };
+
+                    try {
                         const res = await fetch(backendBoardUrl, {
                             method: "POST",
-                            headers: { "Content-Type": "application/json" },
+                            headers: {"Content-Type": "application/json"},
                             body: JSON.stringify(locationData)
                         });
-
                         const data = await res.json();
 
                         if (data.status === "ok") {
                             alert(`${studentData.name} registrado en la buseta.`);
-                            // Solo si es nuevo lo añadimos
-                            if (!scannedStudents.some(s => s.student_id === studentData.student_id)) {
-                                scannedStudents.push({
-                                    student_id: studentData.student_id,
-                                    name: studentData.name
-                                });
-                            }
-                        } else if (data.status === "warning") {
-                            alert(data.message); // aquí recibes "ya está escaneado"
+                            scannedStudents.push({student_id: studentData.student_id, name: studentData.name});
+                            loadStudents();
                         } else {
-                            throw new Error(data.message);
+                            alert(data.message);
                         }
-
-                        loadStudents();
-
-                        btn.disabled = false; // volver a habilitar
-                    }, (err) => {
-                        alert("Error al obtener ubicación: " + err.message);
+                    } catch (err) {
+                        alert("Error al registrar estudiante: " + err.message);
+                    } finally {
                         btn.disabled = false;
-                    });
-                } else {
-                    alert("Geolocalización no soportada en este dispositivo.");
+                    }
+                }, (err) => {
+                    alert("Error al obtener ubicación: " + err.message);
                     btn.disabled = false;
-                }
+                });
 
             } catch(err){
                 alert("Error al registrar estudiante: " + err.message);
-                console.error(err);
                 btn.disabled = false;
             }
         });

@@ -1,0 +1,32 @@
+{
+    "trip_id": 1014,
+    "plate": "BUS123",
+    "school": "Escuela Mena Mena",
+    "locations": [
+        {
+            "plate": "BUS123",
+            "lat": 9.9323926,
+            "lng": -84.0658931,
+            "timestamp": "2025-10-11T04:13:42.151Z"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9323926,
+            "lng": -84.0658931,
+            "timestamp": "2025-10-11T04:13:42.148Z"
+        }
+    ],
+    "students": [
+        {
+            "student_id": 2,
+            "name": "Josue Alvarado Araya",
+            "status": "dropped_off",
+            "boarded_time": "2025-10-10T22:13:10",
+            "boarded_lat": 9.9323926,
+            "boarded_lng": -84.0658931,
+            "dropoff_time": "2025-10-10T22:13:40",
+            "dropoff_lat": 9.9323926,
+            "dropoff_lng": -84.0658931
+        }
+    ]
+}
