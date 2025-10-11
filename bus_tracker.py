@@ -445,7 +445,7 @@ def location():
 
 @app.route("/map")
 def show_map():
-    """HTML map with the trip route and markers (using folium and app_state.current_bus)"""
+    """HTML map with the trip route and drop marks (using folium and app_state.current_bus)"""
     if app_state.current_bus and app_state.current_bus.locations:
         center = (app_state.current_bus.locations[-1].lat, app_state.current_bus.locations[-1].lng)
     else:
