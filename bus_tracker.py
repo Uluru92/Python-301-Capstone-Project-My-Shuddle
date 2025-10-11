@@ -476,13 +476,22 @@ def show_map():
         path = [(c.lat, c.lng) for c in app_state.current_bus.locations]
         folium.PolyLine(path, color="blue", weight=5).add_to(m)
 
-    # Add markers
+    # Add marker
     if app_state.current_bus:
         for c in app_state.current_bus.locations:
             folium.Marker(
                 location=(c.lat, c.lng),
                 popup=f"Bus: {app_state.current_bus.plate}<br>{c.timestamp}"
             ).add_to(m)
+
+        # --- add drop-offs marker ---
+        for s in app_state.current_bus.students_onboard:
+            if s.status == "dropped_off" and s.dropoff_lat and s.dropoff_lng:
+                folium.Marker(
+                    location=(s.dropoff_lat, s.dropoff_lng),
+                    popup=f"Drop-off: {s.name}<br>{s.dropoff_time}",
+                    icon=folium.Icon(color="red", icon="user")
+                ).add_to(m)
 
     return m._repr_html_()
 
