@@ -587,12 +587,16 @@ def view_trips(parent_window):
         # --- Marker when board ---
         boarded_students = [st["name"] for st in data["students"] if st["boarded_time"]]
         if boarded_students:
-            popup_text = "Students on board:\n" + "\n".join(boarded_students)
-            # Marker grouped students scans when boarding shuddle
+            # create lists HTML
+            popup_html = "<b>Students on board:</b><br><ul style='margin:0; padding-left:15px;'>"
+            popup_html += "".join(f"<li>{name}</li>" for name in boarded_students)
+            popup_html += "</ul>"
+
+            # look for first student to set the location
             first_boarded = next(st for st in data["students"] if st["boarded_time"])
             folium.Marker(
                 location=[first_boarded["boarded_lat"], first_boarded["boarded_lng"]],
-                popup=popup_text,
+                popup=folium.Popup(popup_html, max_width=250),
                 icon=folium.Icon(color="green", icon="school")
             ).add_to(m)
 

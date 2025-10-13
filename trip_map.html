@@ -25,7 +25,7 @@
             <meta name="viewport" content="width=device-width,
                 initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
             <style>
-                #map_655d9ae4aee20c73236f24ec65f64812 {
+                #map_8d46e540c1fbf38d439a758c32f186fc {
                     position: relative;
                     width: 100.0%;
                     height: 100.0%;
@@ -35,18 +35,21 @@
                 .leaflet-container { font-size: 1rem; }
             </style>
         
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.1.0/leaflet.markercluster.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.1.0/MarkerCluster.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.1.0/MarkerCluster.Default.css"/>
 </head>
 <body>
     
     
-            <div class="folium-map" id="map_655d9ae4aee20c73236f24ec65f64812" ></div>
+            <div class="folium-map" id="map_8d46e540c1fbf38d439a758c32f186fc" ></div>
         
 </body>
 <script>
     
     
-            var map_655d9ae4aee20c73236f24ec65f64812 = L.map(
-                "map_655d9ae4aee20c73236f24ec65f64812",
+            var map_8d46e540c1fbf38d439a758c32f186fc = L.map(
+                "map_8d46e540c1fbf38d439a758c32f186fc",
                 {
                     center: [10.340155372654062, -84.43408273532766],
                     crs: L.CRS.EPSG3857,
@@ -60,289 +63,297 @@
 
         
     
-            var tile_layer_364e4c156e33f499957a5bc27802ac53 = L.tileLayer(
+            var tile_layer_6aac6878776388c26993c692c859891e = L.tileLayer(
                 "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
                 {"attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors", "detectRetina": false, "maxNativeZoom": 19, "maxZoom": 19, "minZoom": 0, "noWrap": false, "opacity": 1, "subdomains": "abc", "tms": false}
             );
         
     
-            tile_layer_364e4c156e33f499957a5bc27802ac53.addTo(map_655d9ae4aee20c73236f24ec65f64812);
+            tile_layer_6aac6878776388c26993c692c859891e.addTo(map_8d46e540c1fbf38d439a758c32f186fc);
         
     
-            var poly_line_803a0b93f4e98501ecec455fa88ccf1b = L.polyline(
+            var poly_line_99c837854c6f35e38a94cda1cffaf108 = L.polyline(
                 [[10.340155372654062, -84.43408273532766], [10.340152141797446, -84.43407760284326], [10.34014030361025, -84.43409225515205], [10.340997411688477, -84.43420591428453], [10.3412454372273, -84.43242932394527], [10.34090528106616, -84.43234685376432], [10.339005707938618, -84.4319189794069], [10.336372298153616, -84.43226213872381], [10.33634431481935, -84.43222513806906], [10.336316542271947, -84.43271170063836], [10.336245591805394, -84.43303201040614], [10.335981287071794, -84.43333092153485], [10.332981308580099, -84.43225184648853], [10.331417836563869, -84.4316503034247], [10.327636513764109, -84.43158139245338], [10.327581291989786, -84.43154091964743], [10.325444506408433, -84.43147015872108], [10.325444506408433, -84.43147015872108], [10.325444506408433, -84.43147015872108], [10.323675363279547, -84.43148988442968], [10.321999489268146, -84.43079630797176], [10.321599281096862, -84.4304728639127], [10.32146033306989, -84.43041376784257], [10.317104673110101, -84.42870313869892], [10.317104673110101, -84.42870313869892], [10.315253191174005, -84.4273471590627], [10.314188139440798, -84.42756677328673], [10.314188139440798, -84.42756677328673], [10.314188139440798, -84.42756677328673], [10.314188139440798, -84.42756677328673], [10.314188139440798, -84.42756677328673], [10.314188139440798, -84.42756677328673], [10.314188139440798, -84.42756677328673], [10.314188139440798, -84.42756677328673], [10.314188139440798, -84.42756677328673], [10.314188139440798, -84.42756677328673], [10.314188139440798, -84.42756677328673]],
                 {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1.0, "smoothFactor": 1.0, "stroke": true, "weight": 3}
-            ).addTo(map_655d9ae4aee20c73236f24ec65f64812);
+            ).addTo(map_8d46e540c1fbf38d439a758c32f186fc);
         
     
-            var marker_104e3124c2f53632edeb77fe0bccfac9 = L.marker(
+            var marker_cc55a8e7c0b4af34ae629d7396263345 = L.marker(
                 [10.34014104, -84.43408426],
                 {}
-            ).addTo(map_655d9ae4aee20c73236f24ec65f64812);
+            ).addTo(map_8d46e540c1fbf38d439a758c32f186fc);
         
     
-            var icon_fbdb1f15db1988de3140fd0abee6b82f = L.AwesomeMarkers.icon(
+            var icon_529f126cc3a0d5cea04b1f8068b8a0f9 = L.AwesomeMarkers.icon(
                 {"extraClasses": "fa-rotate-0", "icon": "school", "iconColor": "white", "markerColor": "green", "prefix": "glyphicon"}
             );
-            marker_104e3124c2f53632edeb77fe0bccfac9.setIcon(icon_fbdb1f15db1988de3140fd0abee6b82f);
+            marker_cc55a8e7c0b4af34ae629d7396263345.setIcon(icon_529f126cc3a0d5cea04b1f8068b8a0f9);
         
     
-        var popup_1ef79b3cc67abb99b07ca939a4e4e2e3 = L.popup({"maxWidth": "100%"});
+        var popup_a1e105d23a53a2a0a1d5fef7f940baaa = L.popup({"maxWidth": 250});
 
         
             
-                var html_83f642675a07db3bade2191e531182a5 = $(`<div id="html_83f642675a07db3bade2191e531182a5" style="width: 100.0%; height: 100.0%;">Students on board: Jimena Alvarado Araya Josue Alvarado Araya Adrian Sequeira Araya Sebastian Araya Solis Ignacio Araya Solis Pablo Araya Solis Alonso Araya Solis Mariana Eduarte Alvarado Aaron Alvarado Araya</div>`)[0];
-                popup_1ef79b3cc67abb99b07ca939a4e4e2e3.setContent(html_83f642675a07db3bade2191e531182a5);
+                var html_3b70730af141c00c3ec4b0eae4ee8973 = $(`<div id="html_3b70730af141c00c3ec4b0eae4ee8973" style="width: 100.0%; height: 100.0%;"><b>Students on board:</b><br><ul style='margin:0; padding-left:15px;'><li>Jimena Alvarado Araya</li><li>Josue Alvarado Araya</li><li>Adrian Sequeira Araya</li><li>Sebastian Araya Solis</li><li>Ignacio Araya Solis</li><li>Pablo Araya Solis</li><li>Alonso Araya Solis</li><li>Mariana Eduarte Alvarado</li><li>Aaron Alvarado Araya</li></ul></div>`)[0];
+                popup_a1e105d23a53a2a0a1d5fef7f940baaa.setContent(html_3b70730af141c00c3ec4b0eae4ee8973);
             
         
 
-        marker_104e3124c2f53632edeb77fe0bccfac9.bindPopup(popup_1ef79b3cc67abb99b07ca939a4e4e2e3)
+        marker_cc55a8e7c0b4af34ae629d7396263345.bindPopup(popup_a1e105d23a53a2a0a1d5fef7f940baaa)
         ;
 
         
     
     
-            var marker_00f3dc25108d38d6f0b480b11b21ef67 = L.marker(
+            var marker_cluster_d9d202e84b8fd8b6654ff84111f67bb4 = L.markerClusterGroup(
+                {}
+            );
+        
+    
+            var marker_c2220be16cb592d298730b0bbf40e136 = L.marker(
                 [10.32758129, -84.43154092],
                 {}
-            ).addTo(map_655d9ae4aee20c73236f24ec65f64812);
+            ).addTo(marker_cluster_d9d202e84b8fd8b6654ff84111f67bb4);
         
     
-            var icon_7031b77b3fd2270dee96029549dd8f9c = L.AwesomeMarkers.icon(
+            var icon_ee512336b6973e90d45aa21db5afa68d = L.AwesomeMarkers.icon(
                 {"extraClasses": "fa-rotate-0", "icon": "home", "iconColor": "white", "markerColor": "red", "prefix": "glyphicon"}
             );
-            marker_00f3dc25108d38d6f0b480b11b21ef67.setIcon(icon_7031b77b3fd2270dee96029549dd8f9c);
+            marker_c2220be16cb592d298730b0bbf40e136.setIcon(icon_ee512336b6973e90d45aa21db5afa68d);
         
     
-        var popup_fb83095c23eecac68e80ee0aca73a6c8 = L.popup({"maxWidth": "100%"});
+        var popup_413a612d4cdd49c6e82b7a9d4a6b1281 = L.popup({"maxWidth": "100%"});
 
         
             
-                var html_720bccb1246f92c9fb022460ca624539 = $(`<div id="html_720bccb1246f92c9fb022460ca624539" style="width: 100.0%; height: 100.0%;">Bajada: Jimena Alvarado Araya</div>`)[0];
-                popup_fb83095c23eecac68e80ee0aca73a6c8.setContent(html_720bccb1246f92c9fb022460ca624539);
+                var html_01c425e7ddaf3e247d660f72be1d2ca3 = $(`<div id="html_01c425e7ddaf3e247d660f72be1d2ca3" style="width: 100.0%; height: 100.0%;">Bajada: Jimena Alvarado Araya</div>`)[0];
+                popup_413a612d4cdd49c6e82b7a9d4a6b1281.setContent(html_01c425e7ddaf3e247d660f72be1d2ca3);
             
         
 
-        marker_00f3dc25108d38d6f0b480b11b21ef67.bindPopup(popup_fb83095c23eecac68e80ee0aca73a6c8)
+        marker_c2220be16cb592d298730b0bbf40e136.bindPopup(popup_413a612d4cdd49c6e82b7a9d4a6b1281)
         ;
 
         
     
     
-            var marker_c3efd7ae0afb7faa74ee1cb6f98c8f07 = L.marker(
+            var marker_db18c3faf68579c6dfd6a780584b6081 = L.marker(
                 [10.33634431, -84.43222514],
                 {}
-            ).addTo(map_655d9ae4aee20c73236f24ec65f64812);
+            ).addTo(marker_cluster_d9d202e84b8fd8b6654ff84111f67bb4);
         
     
-            var icon_01fd373e4cd6389985db18bfcce968ca = L.AwesomeMarkers.icon(
+            var icon_a15d50b3ab0f5a179e22b757910adabc = L.AwesomeMarkers.icon(
                 {"extraClasses": "fa-rotate-0", "icon": "home", "iconColor": "white", "markerColor": "red", "prefix": "glyphicon"}
             );
-            marker_c3efd7ae0afb7faa74ee1cb6f98c8f07.setIcon(icon_01fd373e4cd6389985db18bfcce968ca);
+            marker_db18c3faf68579c6dfd6a780584b6081.setIcon(icon_a15d50b3ab0f5a179e22b757910adabc);
         
     
-        var popup_940494a9fc49529292563a05c6a80d89 = L.popup({"maxWidth": "100%"});
+        var popup_8fe11c96415400a64ee05410981056bf = L.popup({"maxWidth": "100%"});
 
         
             
-                var html_845d6fbfabc34da62654d02c5ad6229f = $(`<div id="html_845d6fbfabc34da62654d02c5ad6229f" style="width: 100.0%; height: 100.0%;">Bajada: Josue Alvarado Araya</div>`)[0];
-                popup_940494a9fc49529292563a05c6a80d89.setContent(html_845d6fbfabc34da62654d02c5ad6229f);
+                var html_a8f4212108bd8ed464f5ced8eb706d17 = $(`<div id="html_a8f4212108bd8ed464f5ced8eb706d17" style="width: 100.0%; height: 100.0%;">Bajada: Josue Alvarado Araya</div>`)[0];
+                popup_8fe11c96415400a64ee05410981056bf.setContent(html_a8f4212108bd8ed464f5ced8eb706d17);
             
         
 
-        marker_c3efd7ae0afb7faa74ee1cb6f98c8f07.bindPopup(popup_940494a9fc49529292563a05c6a80d89)
+        marker_db18c3faf68579c6dfd6a780584b6081.bindPopup(popup_8fe11c96415400a64ee05410981056bf)
         ;
 
         
     
     
-            var marker_832c68f8d5514fda6d6f00214ee782b8 = L.marker(
+            var marker_1d7c55a41da9a85a552446783182478d = L.marker(
                 [10.32199949, -84.43079631],
                 {}
-            ).addTo(map_655d9ae4aee20c73236f24ec65f64812);
+            ).addTo(marker_cluster_d9d202e84b8fd8b6654ff84111f67bb4);
         
     
-            var icon_98b141209d4e7f4edb350dcdabfed6a5 = L.AwesomeMarkers.icon(
+            var icon_629df90434974c88824b6077cd902ccc = L.AwesomeMarkers.icon(
                 {"extraClasses": "fa-rotate-0", "icon": "home", "iconColor": "white", "markerColor": "red", "prefix": "glyphicon"}
             );
-            marker_832c68f8d5514fda6d6f00214ee782b8.setIcon(icon_98b141209d4e7f4edb350dcdabfed6a5);
+            marker_1d7c55a41da9a85a552446783182478d.setIcon(icon_629df90434974c88824b6077cd902ccc);
         
     
-        var popup_6f07cb96fd1889f3432750369f761478 = L.popup({"maxWidth": "100%"});
+        var popup_d98fdf12d68bcd34a871ec7cd4659962 = L.popup({"maxWidth": "100%"});
 
         
             
-                var html_b6fa0d2b351de02b72855a15ed7136fd = $(`<div id="html_b6fa0d2b351de02b72855a15ed7136fd" style="width: 100.0%; height: 100.0%;">Bajada: Adrian Sequeira Araya</div>`)[0];
-                popup_6f07cb96fd1889f3432750369f761478.setContent(html_b6fa0d2b351de02b72855a15ed7136fd);
+                var html_232c83de34655e16ca44514ab634ec66 = $(`<div id="html_232c83de34655e16ca44514ab634ec66" style="width: 100.0%; height: 100.0%;">Bajada: Adrian Sequeira Araya</div>`)[0];
+                popup_d98fdf12d68bcd34a871ec7cd4659962.setContent(html_232c83de34655e16ca44514ab634ec66);
             
         
 
-        marker_832c68f8d5514fda6d6f00214ee782b8.bindPopup(popup_6f07cb96fd1889f3432750369f761478)
+        marker_1d7c55a41da9a85a552446783182478d.bindPopup(popup_d98fdf12d68bcd34a871ec7cd4659962)
         ;
 
         
     
     
-            var marker_56848d163078ec2bdc86e2d8de759095 = L.marker(
+            var marker_e618d289cd8ee7d9cb5a7635af1d4539 = L.marker(
                 [10.31710467, -84.42870314],
                 {}
-            ).addTo(map_655d9ae4aee20c73236f24ec65f64812);
+            ).addTo(marker_cluster_d9d202e84b8fd8b6654ff84111f67bb4);
         
     
-            var icon_7d9b8e66f51898cacd183766f23be502 = L.AwesomeMarkers.icon(
+            var icon_0fb31adc54eb786351e597f1242f0700 = L.AwesomeMarkers.icon(
                 {"extraClasses": "fa-rotate-0", "icon": "home", "iconColor": "white", "markerColor": "red", "prefix": "glyphicon"}
             );
-            marker_56848d163078ec2bdc86e2d8de759095.setIcon(icon_7d9b8e66f51898cacd183766f23be502);
+            marker_e618d289cd8ee7d9cb5a7635af1d4539.setIcon(icon_0fb31adc54eb786351e597f1242f0700);
         
     
-        var popup_2aaa02fb9c7ba448ded07bb90a1fe6c7 = L.popup({"maxWidth": "100%"});
+        var popup_b0d37ea4f7c700df96764cbd9d42d26c = L.popup({"maxWidth": "100%"});
 
         
             
-                var html_9abc6d456dcb52b41623c7f214ddb196 = $(`<div id="html_9abc6d456dcb52b41623c7f214ddb196" style="width: 100.0%; height: 100.0%;">Bajada: Sebastian Araya Solis</div>`)[0];
-                popup_2aaa02fb9c7ba448ded07bb90a1fe6c7.setContent(html_9abc6d456dcb52b41623c7f214ddb196);
+                var html_df1e58fab3530cc4956a472f09c917dc = $(`<div id="html_df1e58fab3530cc4956a472f09c917dc" style="width: 100.0%; height: 100.0%;">Bajada: Sebastian Araya Solis</div>`)[0];
+                popup_b0d37ea4f7c700df96764cbd9d42d26c.setContent(html_df1e58fab3530cc4956a472f09c917dc);
             
         
 
-        marker_56848d163078ec2bdc86e2d8de759095.bindPopup(popup_2aaa02fb9c7ba448ded07bb90a1fe6c7)
+        marker_e618d289cd8ee7d9cb5a7635af1d4539.bindPopup(popup_b0d37ea4f7c700df96764cbd9d42d26c)
         ;
 
         
     
     
-            var marker_49a10085a62ca7b076bb2f03672c432c = L.marker(
+            var marker_9b7ee437b11a76b404971a5e8fe9aab2 = L.marker(
                 [10.31418814, -84.42756677],
                 {}
-            ).addTo(map_655d9ae4aee20c73236f24ec65f64812);
+            ).addTo(marker_cluster_d9d202e84b8fd8b6654ff84111f67bb4);
         
     
-            var icon_791626e7bb9c0c4b4101397eb28ca20f = L.AwesomeMarkers.icon(
+            var icon_281148416555db904be8c3a973f8260d = L.AwesomeMarkers.icon(
                 {"extraClasses": "fa-rotate-0", "icon": "home", "iconColor": "white", "markerColor": "red", "prefix": "glyphicon"}
             );
-            marker_49a10085a62ca7b076bb2f03672c432c.setIcon(icon_791626e7bb9c0c4b4101397eb28ca20f);
+            marker_9b7ee437b11a76b404971a5e8fe9aab2.setIcon(icon_281148416555db904be8c3a973f8260d);
         
     
-        var popup_783f69fe647f077ce38df70438d951c1 = L.popup({"maxWidth": "100%"});
+        var popup_116a4dadc7fd972b99e025ac2569ba1e = L.popup({"maxWidth": "100%"});
 
         
             
-                var html_18798d090a01dbc91faf872c564f805e = $(`<div id="html_18798d090a01dbc91faf872c564f805e" style="width: 100.0%; height: 100.0%;">Bajada: Ignacio Araya Solis</div>`)[0];
-                popup_783f69fe647f077ce38df70438d951c1.setContent(html_18798d090a01dbc91faf872c564f805e);
+                var html_75ac358f1b10aeec5c382c7e7d43bead = $(`<div id="html_75ac358f1b10aeec5c382c7e7d43bead" style="width: 100.0%; height: 100.0%;">Bajada: Ignacio Araya Solis</div>`)[0];
+                popup_116a4dadc7fd972b99e025ac2569ba1e.setContent(html_75ac358f1b10aeec5c382c7e7d43bead);
             
         
 
-        marker_49a10085a62ca7b076bb2f03672c432c.bindPopup(popup_783f69fe647f077ce38df70438d951c1)
+        marker_9b7ee437b11a76b404971a5e8fe9aab2.bindPopup(popup_116a4dadc7fd972b99e025ac2569ba1e)
         ;
 
         
     
     
-            var marker_201e24ae5d7fec66087c6840243526f7 = L.marker(
+            var marker_39eefe21ee423ad21cc10256482be815 = L.marker(
                 [10.31418814, -84.42756677],
                 {}
-            ).addTo(map_655d9ae4aee20c73236f24ec65f64812);
+            ).addTo(marker_cluster_d9d202e84b8fd8b6654ff84111f67bb4);
         
     
-            var icon_e251f0018e12f47d55dd236f69df5421 = L.AwesomeMarkers.icon(
+            var icon_05bc4cf5ce93fd74ccf0d2b709f80916 = L.AwesomeMarkers.icon(
                 {"extraClasses": "fa-rotate-0", "icon": "home", "iconColor": "white", "markerColor": "red", "prefix": "glyphicon"}
             );
-            marker_201e24ae5d7fec66087c6840243526f7.setIcon(icon_e251f0018e12f47d55dd236f69df5421);
+            marker_39eefe21ee423ad21cc10256482be815.setIcon(icon_05bc4cf5ce93fd74ccf0d2b709f80916);
         
     
-        var popup_7cbf1decaa64103301dac405624b380c = L.popup({"maxWidth": "100%"});
+        var popup_698cdeab909e73fd48d5c7cca2c2913b = L.popup({"maxWidth": "100%"});
 
         
             
-                var html_55105037f3d3a1233d3dec85f331dd91 = $(`<div id="html_55105037f3d3a1233d3dec85f331dd91" style="width: 100.0%; height: 100.0%;">Bajada: Pablo Araya Solis</div>`)[0];
-                popup_7cbf1decaa64103301dac405624b380c.setContent(html_55105037f3d3a1233d3dec85f331dd91);
+                var html_01bdc33e776fd5cf1c36418748a6aacf = $(`<div id="html_01bdc33e776fd5cf1c36418748a6aacf" style="width: 100.0%; height: 100.0%;">Bajada: Pablo Araya Solis</div>`)[0];
+                popup_698cdeab909e73fd48d5c7cca2c2913b.setContent(html_01bdc33e776fd5cf1c36418748a6aacf);
             
         
 
-        marker_201e24ae5d7fec66087c6840243526f7.bindPopup(popup_7cbf1decaa64103301dac405624b380c)
+        marker_39eefe21ee423ad21cc10256482be815.bindPopup(popup_698cdeab909e73fd48d5c7cca2c2913b)
         ;
 
         
     
     
-            var marker_a9bfb97a6dbe3a2893327e3e0427f81a = L.marker(
+            var marker_7fe7d4cac70dd56f53efaf4286d9a31d = L.marker(
                 [10.31418814, -84.42756677],
                 {}
-            ).addTo(map_655d9ae4aee20c73236f24ec65f64812);
+            ).addTo(marker_cluster_d9d202e84b8fd8b6654ff84111f67bb4);
         
     
-            var icon_c0d23f8c24390e67abbc9c3227e7a50f = L.AwesomeMarkers.icon(
+            var icon_21ade9cc89ba4f4c4aaa04734b832768 = L.AwesomeMarkers.icon(
                 {"extraClasses": "fa-rotate-0", "icon": "home", "iconColor": "white", "markerColor": "red", "prefix": "glyphicon"}
             );
-            marker_a9bfb97a6dbe3a2893327e3e0427f81a.setIcon(icon_c0d23f8c24390e67abbc9c3227e7a50f);
+            marker_7fe7d4cac70dd56f53efaf4286d9a31d.setIcon(icon_21ade9cc89ba4f4c4aaa04734b832768);
         
     
-        var popup_00a59cb415a65637a384f10422632453 = L.popup({"maxWidth": "100%"});
+        var popup_e59992c8d898b9cfb49467a524dec271 = L.popup({"maxWidth": "100%"});
 
         
             
-                var html_fc30ebf5269cdbf9ad058ecb6d4ef8c2 = $(`<div id="html_fc30ebf5269cdbf9ad058ecb6d4ef8c2" style="width: 100.0%; height: 100.0%;">Bajada: Alonso Araya Solis</div>`)[0];
-                popup_00a59cb415a65637a384f10422632453.setContent(html_fc30ebf5269cdbf9ad058ecb6d4ef8c2);
+                var html_e96e8013459974e3419e28baa748465e = $(`<div id="html_e96e8013459974e3419e28baa748465e" style="width: 100.0%; height: 100.0%;">Bajada: Alonso Araya Solis</div>`)[0];
+                popup_e59992c8d898b9cfb49467a524dec271.setContent(html_e96e8013459974e3419e28baa748465e);
             
         
 
-        marker_a9bfb97a6dbe3a2893327e3e0427f81a.bindPopup(popup_00a59cb415a65637a384f10422632453)
+        marker_7fe7d4cac70dd56f53efaf4286d9a31d.bindPopup(popup_e59992c8d898b9cfb49467a524dec271)
         ;
 
         
     
     
-            var marker_91be888bc60b3bfb2f93129a0ece7616 = L.marker(
+            var marker_768afeb76970e5232dbcaeeafee86276 = L.marker(
                 [10.31418814, -84.42756677],
                 {}
-            ).addTo(map_655d9ae4aee20c73236f24ec65f64812);
+            ).addTo(marker_cluster_d9d202e84b8fd8b6654ff84111f67bb4);
         
     
-            var icon_7f084bca8067f538e64978647a88b2f7 = L.AwesomeMarkers.icon(
+            var icon_3e7919b32bc568188129b0118ce6e96a = L.AwesomeMarkers.icon(
                 {"extraClasses": "fa-rotate-0", "icon": "home", "iconColor": "white", "markerColor": "red", "prefix": "glyphicon"}
             );
-            marker_91be888bc60b3bfb2f93129a0ece7616.setIcon(icon_7f084bca8067f538e64978647a88b2f7);
+            marker_768afeb76970e5232dbcaeeafee86276.setIcon(icon_3e7919b32bc568188129b0118ce6e96a);
         
     
-        var popup_4ca1cc2eee3fcae072a54846d544d4fd = L.popup({"maxWidth": "100%"});
+        var popup_b80d03c77ef99849324cbc9799c463f3 = L.popup({"maxWidth": "100%"});
 
         
             
-                var html_688623efd297473325e824f816b56a8b = $(`<div id="html_688623efd297473325e824f816b56a8b" style="width: 100.0%; height: 100.0%;">Bajada: Mariana Eduarte Alvarado</div>`)[0];
-                popup_4ca1cc2eee3fcae072a54846d544d4fd.setContent(html_688623efd297473325e824f816b56a8b);
+                var html_9b617747dc61d91c6d5e0857b9e1d054 = $(`<div id="html_9b617747dc61d91c6d5e0857b9e1d054" style="width: 100.0%; height: 100.0%;">Bajada: Mariana Eduarte Alvarado</div>`)[0];
+                popup_b80d03c77ef99849324cbc9799c463f3.setContent(html_9b617747dc61d91c6d5e0857b9e1d054);
             
         
 
-        marker_91be888bc60b3bfb2f93129a0ece7616.bindPopup(popup_4ca1cc2eee3fcae072a54846d544d4fd)
+        marker_768afeb76970e5232dbcaeeafee86276.bindPopup(popup_b80d03c77ef99849324cbc9799c463f3)
         ;
 
         
     
     
-            var marker_af0bec0c339b3b34632e4e0b6fa33749 = L.marker(
+            var marker_6bf31aa4af1012ba836c099108ce238a = L.marker(
                 [10.31418814, -84.42756677],
                 {}
-            ).addTo(map_655d9ae4aee20c73236f24ec65f64812);
+            ).addTo(marker_cluster_d9d202e84b8fd8b6654ff84111f67bb4);
         
     
-            var icon_5098ddbd56130f7a0c3e56936d0aad72 = L.AwesomeMarkers.icon(
+            var icon_5a058953b3fbb2af2b80e83a936ad85b = L.AwesomeMarkers.icon(
                 {"extraClasses": "fa-rotate-0", "icon": "home", "iconColor": "white", "markerColor": "red", "prefix": "glyphicon"}
             );
-            marker_af0bec0c339b3b34632e4e0b6fa33749.setIcon(icon_5098ddbd56130f7a0c3e56936d0aad72);
+            marker_6bf31aa4af1012ba836c099108ce238a.setIcon(icon_5a058953b3fbb2af2b80e83a936ad85b);
         
     
-        var popup_fbbeaa215781b71bd30201c90be8780d = L.popup({"maxWidth": "100%"});
+        var popup_20cf06d104c51ae0eda7d3806421272d = L.popup({"maxWidth": "100%"});
 
         
             
-                var html_5b60c857939a3e1ba3fa66c41739460a = $(`<div id="html_5b60c857939a3e1ba3fa66c41739460a" style="width: 100.0%; height: 100.0%;">Bajada: Aaron Alvarado Araya</div>`)[0];
-                popup_fbbeaa215781b71bd30201c90be8780d.setContent(html_5b60c857939a3e1ba3fa66c41739460a);
+                var html_1de8c5b24967a6dadccec6fd4191e6af = $(`<div id="html_1de8c5b24967a6dadccec6fd4191e6af" style="width: 100.0%; height: 100.0%;">Bajada: Aaron Alvarado Araya</div>`)[0];
+                popup_20cf06d104c51ae0eda7d3806421272d.setContent(html_1de8c5b24967a6dadccec6fd4191e6af);
             
         
 
-        marker_af0bec0c339b3b34632e4e0b6fa33749.bindPopup(popup_fbbeaa215781b71bd30201c90be8780d)
+        marker_6bf31aa4af1012ba836c099108ce238a.bindPopup(popup_20cf06d104c51ae0eda7d3806421272d)
         ;
 
         
     
+    
+            marker_cluster_d9d202e84b8fd8b6654ff84111f67bb4.addTo(map_8d46e540c1fbf38d439a758c32f186fc);
+        
 </script>
 </html>
