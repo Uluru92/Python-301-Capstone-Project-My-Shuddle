@@ -91,14 +91,16 @@
         }
     }
                 
-
         // --- Function to drop students ---
         async function alightStudent(studentId) {
-            
-            const button = event.target; // buttom pushed
-            button.disabled = true; // disable button while waiting for new student scanned boards
+            const button = event.target; // button clicked
+            const originalText = button.innerHTML; // save text
+            button.innerHTML = "⏳ Dropping..."; // show feedback
+            button.disabled = true; // block new clicks
+
             if (!trackingInterval) {
                 alert("The trip hasn't started yet. The student can't be dropped off.");
+                button.innerHTML = originalText;
                 button.disabled = false;
                 return;
             }
@@ -125,7 +127,7 @@
 
                         if (result.status === "ok") {
                             studentsStatusMap[studentId] = "dropped_off";
-                            await loadStudents()
+                            await loadStudents();
                         }
 
                         alert(result.message);
@@ -133,16 +135,20 @@
                     } catch (err) {
                         alert("Error at drop off: " + err.message);
                     } finally {
-                        button.disabled = false; // able buttom
+                        button.innerHTML = originalText; // restore button text
+                        button.disabled = false; // enable button again
                     }
                 });
             } else {
-                alert("Geolocalition not supported on this device.");
+                alert("Geolocation not supported on this device.");
+                button.innerHTML = originalText;
                 button.disabled = false;
             }
         }
 
         // --- Scan QR ---
+        let firstScanLocation = null;
+
         document.getElementById("scanQRBtn").addEventListener("click", async (event) => {
             const btn = event.target;
             btn.disabled = true;
@@ -152,29 +158,21 @@
                 const requiredKeys = ["student_id", "name"];
                 if (!requiredKeys.every(k => studentData.hasOwnProperty(k))) throw new Error("Missing data from clipboard");
 
-                // 🔹 Revisar localmente antes de geolocalización
                 if (scannedStudents.some(s => s.student_id == studentData.student_id)) {
                     alert(`${studentData.name} was already scanned`);
                     btn.disabled = false;
                     return;
                 }
 
-                // ✅ Nuevo estudiante: obtener geolocalización
-                if (!navigator.geolocation) {
-                    alert("Geolocalización no soportada en este dispositivo.");
-                    btn.disabled = false;
-                    return;
-                }
-
-                navigator.geolocation.getCurrentPosition(async (pos) => {
+                // 🚀 Solo pedimos geolocalización una vez (primer estudiante)
+                async function sendBoardRequest(lat, lng) {
                     const locationData = {
                         student_id: studentData.student_id,
                         name: studentData.name,
-                        lat: pos.coords.latitude,
-                        lng: pos.coords.longitude,
+                        lat,
+                        lng,
                         timestamp: new Date().toISOString()
                     };
-
                     try {
                         const res = await fetch(backendBoardUrl, {
                             method: "POST",
@@ -182,7 +180,6 @@
                             body: JSON.stringify(locationData)
                         });
                         const data = await res.json();
-
                         if (data.status === "ok") {
                             alert(`${studentData.name} registrado en la buseta.`);
                             scannedStudents.push({student_id: studentData.student_id, name: studentData.name});
@@ -195,17 +192,35 @@
                     } finally {
                         btn.disabled = false;
                     }
-                }, (err) => {
-                    alert("Error al obtener ubicación: " + err.message);
-                    btn.disabled = false;
-                });
+                }
 
-            } catch(err){
+                if (!firstScanLocation) {
+                    if (!navigator.geolocation) {
+                        alert("Geolocalización no soportada en este dispositivo.");
+                        btn.disabled = false;
+                        return;
+                    }
+                    navigator.geolocation.getCurrentPosition(async (pos) => {
+                        firstScanLocation = {
+                            lat: pos.coords.latitude,
+                            lng: pos.coords.longitude
+                        };
+                        await sendBoardRequest(firstScanLocation.lat, firstScanLocation.lng);
+                    }, (err) => {
+                        alert("Error al obtener ubicación: " + err.message);
+                        btn.disabled = false;
+                    });
+                } else {
+                    // ✅ Reutilizar coordenadas del primer scan
+                    await sendBoardRequest(firstScanLocation.lat, firstScanLocation.lng);
+                    btn.disabled = false;
+                }
+
+            } catch (err) {
                 alert("Error al registrar estudiante: " + err.message);
                 btn.disabled = false;
             }
         });
-
         // --- Start Trip ---
         document.getElementById("startBtn").addEventListener("click", async () => {
             try {
@@ -248,27 +263,32 @@
             try {
                 const res = await fetch(backendStopUrl, { method: "POST" });
                 const data = await res.json();
-                if(data.status !== "ok") throw new Error(data.message);
+                if (data.status !== "ok") throw new Error(data.message);
 
                 alert("Trip stopped!");
+
+                // 🧹 Clear tracking and reset all state
                 clearInterval(trackingInterval);
                 trackingInterval = null;
 
-                // keep green buttoms
-                loadStudents();
+                scannedStudents = [];
+                studentsStatusMap = {};
+                document.getElementById("studentsList").innerHTML = "<p>No students on board</p>";
 
-                document.getElementById("startBtn").disabled = false;
-                document.getElementById("scanQRBtn").disabled = false;
+                // 🎛 Reset buttons to initial state
+                document.getElementById("startBtn").disabled = true;
                 document.getElementById("stopBtn").disabled = true;
+                document.getElementById("scanQRBtn").disabled = false;
 
-            } catch(err){
+                // Optional: notify backend to clear session data if needed
+                // await fetch(`${NGROK_URL}/reset_trip`, { method: "POST" });
+
+                console.log("✅ System reset and ready for a new trip");
+
+            } catch (err) {
                 alert("Error stopping trip: " + err.message);
             }
         });
-
-        // update list every 5s
-        setInterval(loadStudents, 30000);
-        loadStudents();
     </script>
 </body>
 </html>

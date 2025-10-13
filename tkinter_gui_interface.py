@@ -237,7 +237,7 @@ def register_student(parent_window):
     parent_window.withdraw()
     student_window  = Toplevel(parent_window)
     student_window .title("Student Registration")
-    student_window .geometry("400x300")
+    student_window .geometry("500x600")
 
     # Make a 2×2 grid on the root of this window
     student_window.grid_rowconfigure(0, weight=1)
@@ -246,7 +246,7 @@ def register_student(parent_window):
     student_window.grid_columnconfigure(2, weight=1)
 
     # Center frame
-    frm = ttk.Frame(student_window, padding=20)
+    frm = ttk.Frame(student_window, padding=10)
     frm.grid(row=1, column=1, sticky="nsew")
 
     # Make the window resizable
@@ -273,21 +273,21 @@ def register_student(parent_window):
 
     # Inputs for parent registration:
     ttk.Label(scroll_frame, text="Parent email:").grid(column=0, row=0, sticky=W, pady=5)
-    entry_parent_email = ttk.Entry(scroll_frame, width=25)
+    entry_parent_email = ttk.Entry(scroll_frame, width=30)
     entry_parent_email.grid(column=1, row=0, pady=5)
 
     ttk.Label(scroll_frame, text="First Name:").grid(column=0, row=1, sticky=W, pady=5)
-    entry_student_name = ttk.Entry(scroll_frame, width=25)
+    entry_student_name = ttk.Entry(scroll_frame, width=30)
     entry_student_name.grid(column=1, row=1, pady=5)
 
     ttk.Label(scroll_frame, text="Last Name:").grid(column=0, row=2, sticky=W, pady=5)
-    entry_student_last_name = ttk.Entry(scroll_frame, width=25)
+    entry_student_last_name = ttk.Entry(scroll_frame, width=30)
     entry_student_last_name.grid(column=1, row=2, pady=5)
     
      # --- School selection ---
     ttk.Label(scroll_frame, text="School:").grid(column=0, row=3, sticky=W, pady=5)
     school_var = StringVar()
-    combo_school = ttk.Combobox(scroll_frame, textvariable=school_var, width=25, state="readonly")
+    combo_school = ttk.Combobox(scroll_frame, textvariable=school_var, width=30, state="readonly")
     combo_school.grid(column=1, row=3, pady=5)
 
     # Load schools from DB
@@ -390,14 +390,14 @@ def register_student(parent_window):
         finally:
             conn.close()
 
-    ttk.Button(scroll_frame, text="Register", width=25, command=save_student_info).grid(column=1, row=7, sticky=W, pady=5)
+    ttk.Button(scroll_frame, text="Register", width=30, command=save_student_info).grid(column=1, row=7, sticky=W, pady=5)
 
     # --- Logout button ---
     def close_student_window(window, parent_window):
         window.destroy()
         parent_window.deiconify()
 
-    ttk.Button(scroll_frame, text="Logout", width=25, command=lambda: close_student_window(student_window, parent_window)).grid(column=1, row=8, sticky=W, pady=5)
+    ttk.Button(scroll_frame, text="Logout", width=30, command=lambda: close_student_window(student_window, parent_window)).grid(column=1, row=8, sticky=W, pady=5)
 
     student_window.protocol("WM_DELETE_WINDOW", lambda: close_student_window(student_window, parent_window))
     student_window.grab_set()
@@ -506,31 +506,31 @@ def view_trips(parent_window):
     trips_window.rowconfigure(0, weight=1)
     trips_window.columnconfigure(0, weight=1)
 
-    # --- Filtro por fecha ---
+    # --- date filter ---
     ttk.Label(frm, text="Select Trip Date:").grid(column=0, row=0, sticky=W, pady=5)
     date_var = StringVar(value=datetime.now().strftime("%Y-%m-%d"))
     date_entry = DateEntry(frm, textvariable=date_var, date_pattern="yyyy-mm-dd")
     date_entry.grid(column=1, row=0, pady=5, sticky=W)
 
-    # --- Treeview con resumen ---
+    # --- Treeview ---
     columns = ("school", "plate", "student", "boarded_time", "dropoff_time", "json_file")
     tree = ttk.Treeview(frm, columns=columns, show="headings", height=15)
     tree.grid(column=0, row=2, columnspan=3, pady=10, sticky="nsew")
 
-    for col in columns[:-1]:  # ocultamos json_file
+    for col in columns[:-1]:
         tree.heading(col, text=col.capitalize())
         tree.column(col, width=150)
 
-    tree.column("json_file", width=0, stretch=False)  # oculto para el usuario
+    tree.column("json_file", width=0, stretch=False)  # hide json_file for user
 
     frm.grid_rowconfigure(2, weight=1)
     frm.grid_columnconfigure(2, weight=1)
 
-    # --- Cargar datos desde JSON ---
+    # --- load data from JSON ---
     def load_trips():
         selected_date = date_var.get()
 
-        # Limpiar tabla
+        # clean table
         for row in tree.get_children():
             tree.delete(row)
 
@@ -540,12 +540,11 @@ def view_trips(parent_window):
             with open(file, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
-            # Filtrar por fecha según nombre de archivo
-            file_date = file.stem.split("_")[0]  # toma 'YYYY-MM-DD'
+            # filter json by looking at the date in the name
+            file_date = file.stem.split("_")[0]  # checks 'YYYY-MM-DD'
             if file_date != selected_date:
                 continue
 
-            # Recorrer estudiantes (cada viaje aparece solo una vez)
             for st in data["students"]:
                 tree.insert("", "end", values=(
                     data.get("school", ""),
@@ -553,19 +552,19 @@ def view_trips(parent_window):
                     st.get("name", ""),
                     st.get("boarded_time", ""),
                     st.get("dropoff_time", ""),
-                    str(file)  # path completo para el mapa
+                    str(file)  # file path
                 ))
 
-    # Llamada automática al abrir la ventana
+    # command to open trips by selected date
     load_trips()
 
     ttk.Button(frm, text="View Trips", command=load_trips).grid(column=2, row=0, pady=5, sticky=E)
 
-    # --- Mostrar mapa ---
+    # --- show map ---
     def show_map():
         selected = tree.focus()
         if not selected:
-            print("Selecciona un viaje")
+            print("First select a trip to view map")
             return
 
         values = tree.item(selected, "values")
@@ -577,18 +576,18 @@ def view_trips(parent_window):
         coords = [(loc["lat"], loc["lng"]) for loc in data["locations"]]
 
         if not coords:
-            print("No hay coordenadas para este viaje")
+            print("Missing data for this trip")
             return
 
-        # Mapa con folium
+        # Trip polyline created with folium map using coords registererd in json file
         m = folium.Map(location=coords[0], zoom_start=15)
         folium.PolyLine(coords, color="blue", weight=3).add_to(m)
 
-        # --- Marcador único de subida ---
+        # --- Marker when board ---
         boarded_students = [st["name"] for st in data["students"] if st["boarded_time"]]
         if boarded_students:
-            popup_text = "Estudiantes a bordo:\n" + "\n".join(boarded_students)
-            # Tomamos coordenadas del primer estudiante escaneado
+            popup_text = "Students on board:\n" + "\n".join(boarded_students)
+            # Marker grouped students scans when boarding shuddle
             first_boarded = next(st for st in data["students"] if st["boarded_time"])
             folium.Marker(
                 location=[first_boarded["boarded_lat"], first_boarded["boarded_lng"]],
