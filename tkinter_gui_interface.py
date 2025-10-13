@@ -7,6 +7,7 @@ from pathlib import Path
 import mysql.connector, qrcode, json, os, webbrowser, folium
 from datetime import datetime
 from dotenv import load_dotenv
+from folium.plugins import MarkerCluster
 
 # Admin user Tkinter
 admin_email = "admin@gmail.com"
@@ -596,13 +597,14 @@ def view_trips(parent_window):
             ).add_to(m)
 
         # --- Marcadores de bajada ---
+        cluster = MarkerCluster().add_to(m)
         for st in data["students"]:
             if st["dropoff_time"]:
                 folium.Marker(
                     [st["dropoff_lat"], st["dropoff_lng"]],
                     popup=f"Bajada: {st['name']}",
                     icon=folium.Icon(color="red", icon="home")
-                ).add_to(m)
+                ).add_to(cluster)
 
         map_file = "trip_map.html"
         m.save(map_file)
@@ -610,7 +612,7 @@ def view_trips(parent_window):
 
     ttk.Button(frm, text="Show Map", command=show_map).grid(column=2, row=1, pady=5, sticky=E)
 
-    # --- Botón cerrar ---
+    # --- buttom close ---
     def close_trips_window(window, parent_window):
         window.destroy()
         parent_window.deiconify()
