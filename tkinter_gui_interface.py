@@ -596,7 +596,7 @@ def view_trips(parent_window):
                 icon=folium.Icon(color="green", icon="school")
             ).add_to(m)
 
-        # --- Marcadores de bajada ---
+        # --- Markers drop off ---
         cluster = MarkerCluster().add_to(m)
         for st in data["students"]:
             if st["dropoff_time"]:
