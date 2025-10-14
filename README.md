@@ -4,7 +4,10 @@ MyShuddle is a real-time school bus tracking application that helps parents moni
 How it works?
 
 1. Create a venv a install all the packages listed in requeriments.txt
-2. Open tkinter_gui_interface.py to create users (parents accounts and their child-students)
+2. Open tkinter_gui_interface.py to create users (parents accounts and their child-students). 
+    - To use interface:
+        admin_email = "admin@gmail.com"
+        admin_password = "admin123"
 3. Open Command Prompt and generete and ngrok public URL: ngrok http 5000
 
 '''
