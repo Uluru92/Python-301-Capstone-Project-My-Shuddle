@@ -66,6 +66,8 @@ CREATE TABLE IF NOT EXISTS students (
     last_name VARCHAR(100),
     birth_date DATE,
     school_phone VARCHAR(20),
+    home_lat DECIMAL(10,6),
+    home_lng DECIMAL(10,6),
     FOREIGN KEY (parent_email) REFERENCES parents(email),
     FOREIGN KEY (school_phone) REFERENCES schools(school_phone)
 );
