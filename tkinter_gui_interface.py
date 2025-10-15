@@ -328,6 +328,15 @@ def register_student(parent_window):
     ttk.Button(scroll_frame, text="Select Birth Date", command=select_birth_date).grid(column=0, row=4, sticky=W, pady=5)
     ttk.Label(scroll_frame, textvariable=selected_date_var).grid(column=1, row=4, sticky=W, pady=5)
 
+    # --- Home location (latitude & longitude) ---
+    ttk.Label(scroll_frame, text="Home Latitude:").grid(column=0, row=5, sticky=W, pady=5)
+    entry_home_lat = ttk.Entry(scroll_frame, width=30)
+    entry_home_lat.grid(column=1, row=5, pady=5)
+
+    ttk.Label(scroll_frame, text="Home Longitude:").grid(column=0, row=6, sticky=W, pady=5)
+    entry_home_lng = ttk.Entry(scroll_frame, width=30)
+    entry_home_lng.grid(column=1, row=6, pady=5)
+
     # --- Save student info ---
     def save_student_info():
         parent_email = entry_parent_email.get().strip()
@@ -336,9 +345,11 @@ def register_student(parent_window):
         birth_day = selected_date_var.get().strip()
         school_selection = school_var.get()
         school_phone = school_map.get(school_selection)
+        home_lat = entry_home_lat.get().strip()
+        home_lng = entry_home_lng.get().strip()
 
-        if not parent_email or not first_name or not last_name or not birth_day or not school_phone:
-            messagebox.showerror("Error", "All fields are required.")
+        if not parent_email or not first_name or not last_name or not birth_day or not school_phone or not home_lat or not home_lng:
+            messagebox.showerror("Error", "All fields are required, including home coordinates.")
             return
 
         conn = connect_db()
@@ -351,9 +362,9 @@ def register_student(parent_window):
                 return
 
             cursor.execute("""
-                INSERT INTO students (parent_email, first_name, last_name, birth_date, school_phone)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (parent_email, first_name, last_name, birth_day, school_phone))
+                INSERT INTO students (parent_email, first_name, last_name, birth_date, school_phone, home_lat, home_lng)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (parent_email, first_name, last_name, birth_day, school_phone, home_lat, home_lng))
             conn.commit()
             student_id = cursor.lastrowid
 
@@ -385,6 +396,9 @@ def register_student(parent_window):
             entry_student_last_name.delete(0, END)
             selected_date_var.set("No date selected")
             school_var.set(combo_school['values'][0])
+            entry_home_lat.delete(0, END)
+            entry_home_lng.delete(0, END)
+
 
         except mysql.connector.Error as err:
             messagebox.showerror("Database Error", str(err))
