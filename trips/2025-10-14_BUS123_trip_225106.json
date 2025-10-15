@@ -1,0 +1,90 @@
+{
+    "trip_id": 24,
+    "plate": "BUS123",
+    "school": "Escuela Victoriano Mena Mena",
+    "locations": [
+        {
+            "plate": "BUS123",
+            "lat": 9.9324169,
+            "lng": -84.0658576,
+            "timestamp": "2025-10-14T22:48:46"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9324169,
+            "lng": -84.0658576,
+            "timestamp": "2025-10-14T22:49:17"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9324372,
+            "lng": -84.0658613,
+            "timestamp": "2025-10-14T22:49:47"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9324372,
+            "lng": -84.0658613,
+            "timestamp": "2025-10-14T22:50:17"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9324372,
+            "lng": -84.0658613,
+            "timestamp": "2025-10-14T22:50:17"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9324372,
+            "lng": -84.0658613,
+            "timestamp": "2025-10-14T22:50:17"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9324372,
+            "lng": -84.0658613,
+            "timestamp": "2025-10-14T22:50:47"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9324372,
+            "lng": -84.0658613,
+            "timestamp": "2025-10-14T22:50:47"
+        }
+    ],
+    "students": [
+        {
+            "student_id": 1,
+            "name": "Jimena Alvarado Araya",
+            "status": "dropped_off",
+            "boarded_time": "2025-10-14T22:48:46",
+            "boarded_lat": 9.9324169,
+            "boarded_lng": -84.0658576,
+            "dropoff_time": "2025-10-14T22:50:16",
+            "dropoff_lat": 9.9324372,
+            "dropoff_lng": -84.0658613
+        },
+        {
+            "student_id": 7,
+            "name": "Alonso Araya Solis",
+            "status": "dropped_off",
+            "boarded_time": "2025-10-14T22:49:09",
+            "boarded_lat": 9.9324169,
+            "boarded_lng": -84.0658576,
+            "dropoff_time": "2025-10-14T22:50:45",
+            "dropoff_lat": 9.9324372,
+            "dropoff_lng": -84.0658613
+        },
+        {
+            "student_id": 9,
+            "name": "Aaron Alvarado Araya",
+            "status": "dropped_off",
+            "boarded_time": "2025-10-14T22:48:49",
+            "boarded_lat": 9.9324169,
+            "boarded_lng": -84.0658576,
+            "dropoff_time": "2025-10-14T22:50:15",
+            "dropoff_lat": 9.9324372,
+            "dropoff_lng": -84.0658613
+        }
+    ]
+}

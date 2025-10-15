@@ -1,0 +1,55 @@
+{
+    "trip_id": 7,
+    "plate": "BUS123",
+    "school": "Escuela Victoriano Mena Mena",
+    "locations": [
+        {
+            "plate": "BUS123",
+            "lat": 9.932433,
+            "lng": -84.0658889,
+            "timestamp": "2025-10-14T17:44:33"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9324671,
+            "lng": -84.065856,
+            "timestamp": "2025-10-14T17:45:07"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9324671,
+            "lng": -84.065856,
+            "timestamp": "2025-10-14T17:45:07"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9324671,
+            "lng": -84.065856,
+            "timestamp": "2025-10-14T17:45:07"
+        }
+    ],
+    "students": [
+        {
+            "student_id": 4,
+            "name": "Sebastian Araya Solis",
+            "status": "dropped_off",
+            "boarded_time": "2025-10-14T17:44:28",
+            "boarded_lat": 9.932433,
+            "boarded_lng": -84.0658889,
+            "dropoff_time": "2025-10-14T17:45:06",
+            "dropoff_lat": 9.9324671,
+            "dropoff_lng": -84.065856
+        },
+        {
+            "student_id": 7,
+            "name": "Alonso Araya Solis",
+            "status": "dropped_off",
+            "boarded_time": "2025-10-14T17:44:14",
+            "boarded_lat": 9.932433,
+            "boarded_lng": -84.0658889,
+            "dropoff_time": "2025-10-14T17:45:06",
+            "dropoff_lat": 9.9324671,
+            "dropoff_lng": -84.065856
+        }
+    ]
+}

@@ -1,10 +1,12 @@
-import os, json, folium, mysql.connector
+import os, json, folium, mysql.connector, secrets
 from datetime import datetime, timedelta
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, session, jsonify, render_template, redirect, url_for
 from flask_cors import CORS
 from dotenv import load_dotenv
 from mysql.connector import Error
 from pathlib import Path
+from folium.plugins import MarkerCluster
+
 
 # importar modelos OOP
 from models import Bus, Student, BusTracker, BusLocation
@@ -17,6 +19,7 @@ MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD")
 MYSQL_HOST = os.getenv("MYSQL_HOST")
 MYSQL_PORT = os.getenv("MYSQL_PORT")
 MYSQL_DB_MYSHUDDLE = os.getenv("MYSQL_DB_MYSHUDDLE")
+
 
 # -------------------- App state --------------------
 class AppState:
@@ -180,7 +183,178 @@ CORS(app)  # habilita CORS para que el navegador pueda enviar POST
 
 print("🌍 Usando URL pública de ngrok:", NGROK_URL)
 
+app.secret_key = os.getenv("FLASK_SECRET_KEY")
+
 # -------------------- Endpoints --------------------
+@app.route("/parent/login", methods=["GET", "POST"])
+def parent_login():
+    if request.method == "GET":
+        return render_template("parent_login.html")
+    
+    email = request.form.get("email")
+    password = request.form.get("password")
+    
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT email, name FROM parents WHERE email = %s AND password = %s", (email, password))
+    parent = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    
+    if parent:
+        session["parent_email"] = parent["email"]
+        return redirect(url_for("parent_map"))  # redirects to /parent/map
+    else:
+        return render_template("parent_login.html", error="Invalid email or password")
+
+@app.route("/parent/map")
+def parent_map():
+    if "parent_email" not in session:
+        return redirect(url_for("parent_login"))
+
+    parent_email = session["parent_email"]
+
+    # 1️⃣ Obtener todos los hijos del padre
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT student_id, CONCAT(first_name, ' ', last_name) AS name
+        FROM students
+        WHERE parent_email = %s
+    """, (parent_email,))
+    children = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    if not children:
+        return "<h3>No student linked to this parent.</h3>", 404
+
+    parent_child_ids = [c["student_id"] for c in children]
+
+    # 2️⃣ Inicializar mapa
+    default_coords = (10.05, -85.42)  # Hojancha
+    m = folium.Map(location=default_coords, zoom_start=15)
+    dropoff_cluster = MarkerCluster(name="Drop-offs").add_to(m)
+
+    # --- Variables para markers ---
+    all_boarded_students = []      # lista global de estudiantes a bordo
+    board_marker_coords = None
+    parent_boarded_coords = None
+    boarding_anon_counter = 1
+    dropoff_anon_counter = 1
+
+    # 3️⃣ Recorrer los hijos del padre
+    for child in children:
+        child_id = child["student_id"]
+
+        # Último viaje del hijo
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT t.trip_id
+            FROM trips t
+            JOIN trip_students ts ON t.trip_id = ts.trip_id
+            WHERE ts.student_id = %s
+            ORDER BY t.trip_id DESC
+            LIMIT 1
+        """, (child_id,))
+        trip = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+        if not trip:
+            continue
+
+        trip_id = trip["trip_id"]
+        students = get_students_by_trip(trip_id)
+
+        # 4️⃣ Agregar estudiantes a la lista global de boarding
+        for s in students:
+            # Si el estudiante ya fue agregado, omitir
+            if s["student_id"] in [st["id"] for st in all_boarded_students]:
+                continue
+
+            # Si es hijo del padre → mostrar nombre real
+            if s["student_id"] in parent_child_ids:
+                display_name = s["name"]
+            else:
+                display_name = f"Student #{boarding_anon_counter}"
+                boarding_anon_counter += 1
+
+            all_boarded_students.append({
+                "id": s["student_id"],
+                "name": display_name,
+                "real_name": s["name"]
+            })
+
+            # Coordenadas del marker global azul
+            if not board_marker_coords and s.get("boarded_lat") and s.get("boarded_lng"):
+                board_marker_coords = (s["boarded_lat"], s["boarded_lng"])
+
+            # Coordenadas para centrar en el hijo
+            if s["student_id"] in parent_child_ids and not parent_boarded_coords:
+                parent_boarded_coords = (s["boarded_lat"], s["boarded_lng"])
+
+        # 5️⃣ Crear drop-off markers
+        for s in students:
+            if s.get("dropoff_lat") and s.get("dropoff_lng"):
+                if s["student_id"] in parent_child_ids:
+                    # Drop-off del hijo → azul con casita blanca
+                    display_name = s["name"]
+                    popup_html = f"""
+                    <div style="font-family: Arial, sans-serif; font-size: 14px;">
+                        <b>🏠 Drop-off</b><br>
+                        <b>Student:</b> {display_name}<br>
+                        <b>Time:</b> {s.get('dropoff_time') or 'Unknown'}
+                    </div>
+                    """
+                    folium.Marker(
+                        [s["dropoff_lat"], s["dropoff_lng"]],
+                        popup=folium.Popup(popup_html, max_width=250),
+                        icon=folium.Icon(color="blue", icon="home", prefix="fa")
+                    ).add_to(dropoff_cluster)
+                else:
+                    # Drop-off anónimo → verde con casita blanca
+                    display_name = f"Student #{dropoff_anon_counter}"
+                    dropoff_anon_counter += 1
+                    popup_html = f"""
+                    <div style="font-family: Arial, sans-serif; font-size: 14px;">
+                        <b>🏠 Drop-off</b><br>
+                        <b>Student:</b> {display_name}<br>
+                        <b>Time:</b> {s.get('dropoff_time') or 'Unknown'}
+                    </div>
+                    """
+                    folium.Marker(
+                        [s["dropoff_lat"], s["dropoff_lng"]],
+                        popup=folium.Popup(popup_html, max_width=250),
+                        icon=folium.Icon(color="green", icon="home", prefix="fa")
+                    ).add_to(dropoff_cluster)
+
+    # 6️⃣ Marker global azul (lista de todos los estudiantes)
+    if all_boarded_students and board_marker_coords:
+        names_list = "".join(f"<li>{s['name']}</li>" for s in all_boarded_students)
+        popup_html = f"""
+        <div style="font-family: Arial, sans-serif; font-size: 14px;">
+            <b>🚌 All Boarding Students:</b><br>
+            <ul style="margin:5px 0 0 15px; padding:0;">
+                {names_list}
+            </ul>
+        </div>
+        """
+        folium.Marker(
+            location=board_marker_coords,
+            popup=folium.Popup(popup_html, max_width=250),
+            icon=folium.Icon(color="blue", icon="school")
+        ).add_to(m)
+
+    # 7️⃣ Centrar mapa según el hijo o boarding marker
+    if parent_boarded_coords:
+        m.location = parent_boarded_coords
+    elif board_marker_coords:
+        m.location = board_marker_coords
+
+    return m._repr_html_()
+
 @app.route("/")
 def home():
     return render_template("index.html", ngrok_url=NGROK_URL)
@@ -273,6 +447,15 @@ def start_trip():
                 ) VALUES (%s, %s, %s, %s, %s, %s)
             """, (app_state.current_trip_id, s.student_id, s.status, s.boarded_time, s.boarded_lat, s.boarded_lng))
             bus.board_student(s)    # board student object to bus object
+            # ---set initial location using first pre scanned student ---
+            if s == app_state.pre_scanned_students[0] and s.boarded_lat and s.boarded_lng:
+                init_loc = BusLocation(
+                    lat=float(s.boarded_lat),
+                    lng=float(s.boarded_lng),
+                    timestamp=s.boarded_time,  # hora del escaneo
+                    plate=bus.plate
+                )
+                bus.locations.append(init_loc)
         conn.commit()
         print(f"🚍 Viaje iniciado con {len(bus.students_onboard)} estudiantes (trip_id={app_state.current_trip_id})")
 
@@ -463,11 +646,32 @@ def location():
 
 @app.route("/map")
 def show_map():
-    """HTML map with the trip route and drop marks (using folium and app_state.current_bus)"""
-    if app_state.current_bus and app_state.current_bus.locations:
-        center = (app_state.current_bus.locations[-1].lat, app_state.current_bus.locations[-1].lng)
+    """HTML map with the trip route and drop marks (using folium and app_state)"""
+
+    # --- 1️⃣ Preparar bus temporal si no hay current_bus pero hay pre-scanned students ---
+    if not app_state.current_bus and app_state.pre_scanned_students:
+        temp_bus = Bus("BUS123")  # placa temporal
+        for s in app_state.pre_scanned_students:
+            temp_bus.board_student(s)
+        bus = temp_bus
     else:
-        center = (10.05, -85.42)  # Hojancha (default)
+        bus = app_state.current_bus
+
+    # --- 2️⃣ Determinar centro del mapa ---
+    if bus and bus.locations:
+        center = (bus.locations[-1].lat, bus.locations[-1].lng)
+    elif bus:
+        # Centrar en el primer estudiante con coordenadas
+        first_student_with_coords = next(
+            (s for s in bus.students_onboard if s.boarded_lat is not None and s.boarded_lng is not None),
+            None
+        )
+        if first_student_with_coords:
+            center = (first_student_with_coords.boarded_lat, first_student_with_coords.boarded_lng)
+        else:
+            center = (10.05, -85.42)  # default Hojancha
+    else:
+        center = (10.05, -85.42)  # default Hojancha
 
     m = folium.Map(location=center, zoom_start=15)
 
@@ -476,22 +680,44 @@ def show_map():
         path = [(c.lat, c.lng) for c in app_state.current_bus.locations]
         folium.PolyLine(path, color="blue", weight=5).add_to(m)
 
-    # Add marker
-    if app_state.current_bus:
-        for c in app_state.current_bus.locations:
+        # --- BOARDING MARKER ---
+        boarded_students = [s for s in app_state.current_bus.students_onboard if s.boarded_lat is not None]
+        if boarded_students:
+            # Create HTML list of names
+            names_list = "".join(f"<li>{s.name}</li>" for s in boarded_students)
+            popup_html = f"""
+            <div style="font-family: Arial, sans-serif; font-size: 14px;">
+                <b>🚌 Boarding Students:</b><br>
+                <ul style="margin:5px 0 0 15px; padding:0;">
+                    {names_list}
+                </ul>
+            </div>
+            """
+            # Use first boarded student's location to set boarded point in school
+            first = boarded_students[0]
             folium.Marker(
-                location=(c.lat, c.lng),
-                popup=f"Bus: {app_state.current_bus.plate}<br>{c.timestamp}"
+                location=[first.boarded_lat, first.boarded_lng],
+                popup=folium.Popup(popup_html, max_width=250),
+                icon=folium.Icon(color="blue", icon="school")
             ).add_to(m)
 
-        # --- add drop-offs marker ---
+        # --- DROP-OFF MARKERS with clustering  ---
+        dropoff_cluster = MarkerCluster(name="Drop-offs").add_to(m)
         for s in app_state.current_bus.students_onboard:
-            if s.status == "dropped_off" and s.dropoff_lat and s.dropoff_lng:
+            if s.status == "dropped_off" and s.dropoff_lat is not None and s.dropoff_lng is not None:
+                dropoff_time = s.dropoff_time or "Unknown"
+                popup_html = f"""
+                <div style="font-family: Arial, sans-serif; font-size: 14px;">
+                    <b>🏠 Drop-off</b><br>
+                    <b>Student:</b> {s.name}<br>
+                    <b>Time:</b> {dropoff_time}
+                </div>
+                """
                 folium.Marker(
                     location=(s.dropoff_lat, s.dropoff_lng),
-                    popup=f"Drop-off: {s.name}<br>{s.dropoff_time}",
-                    icon=folium.Icon(color="red", icon="user")
-                ).add_to(m)
+                    popup=folium.Popup(popup_html, max_width=250),
+                    icon=folium.Icon(color="green", icon="home")
+                ).add_to(dropoff_cluster)
 
     return m._repr_html_()
 

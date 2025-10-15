@@ -156,33 +156,33 @@
                 const text = await navigator.clipboard.readText();
                 const studentData = JSON.parse(text);
                 const requiredKeys = ["student_id", "name"];
-                if (!requiredKeys.every(k => studentData.hasOwnProperty(k))) throw new Error("Missing data from clipboard");
-
+                if (!requiredKeys.every(k => studentData.hasOwnProperty(k))) {
+                    throw new Error("Missing data from clipboard");
+                }
                 if (scannedStudents.some(s => s.student_id == studentData.student_id)) {
                     alert(`${studentData.name} was already scanned`);
                     btn.disabled = false;
                     return;
                 }
 
-                // 🚀 Solo pedimos geolocalización una vez (primer estudiante)
                 async function sendBoardRequest(lat, lng) {
                     const locationData = {
                         student_id: studentData.student_id,
                         name: studentData.name,
-                        lat,
-                        lng,
+                        lat: lat,
+                        lng: lng,
                         timestamp: new Date().toISOString()
                     };
                     try {
                         const res = await fetch(backendBoardUrl, {
                             method: "POST",
-                            headers: {"Content-Type": "application/json"},
+                            headers: { "Content-Type": "application/json" },
                             body: JSON.stringify(locationData)
                         });
                         const data = await res.json();
                         if (data.status === "ok") {
                             alert(`${studentData.name} registrado en la buseta.`);
-                            scannedStudents.push({student_id: studentData.student_id, name: studentData.name});
+                            scannedStudents.push({ student_id: studentData.student_id, name: studentData.name });
                             loadStudents();
                         } else {
                             alert(data.message);
@@ -211,19 +211,18 @@
                         btn.disabled = false;
                     });
                 } else {
-                    // ✅ Reutilizar coordenadas del primer scan
                     await sendBoardRequest(firstScanLocation.lat, firstScanLocation.lng);
-                    btn.disabled = false;
                 }
-
             } catch (err) {
                 alert("Error al registrar estudiante: " + err.message);
                 btn.disabled = false;
             }
         });
+        
         // --- Start Trip ---
         document.getElementById("startBtn").addEventListener("click", async () => {
             try {
+                // 1. Start trip in backend
                 const res = await fetch(backendStartUrl, { method: "POST" });
                 const data = await res.json();
                 if (data.status !== "ok") throw new Error(data.message);
@@ -233,27 +232,51 @@
                 document.getElementById("startBtn").disabled = true;
                 document.getElementById("scanQRBtn").disabled = true;
 
-                const sendLocation = (pos) => {
+                // 2. send location to backend
+                const sendLocationToBackend = (lat, lng) => {
                     const locationData = {
-                        lat: pos.coords.latitude,
-                        lng: pos.coords.longitude,
+                        lat: lat,
+                        lng: lng,
                         timestamp: new Date().toISOString()
                     };
                     fetch(backendLocationUrl, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(locationData)
-                    }).then(r => r.json())
-                    .then(res => console.log("Server response:", res))
-                    .catch(err => console.error("Error sending location:", err));
+                    })
+                    .then(r => r.json())
+                    .then(res => console.log("📍 Location sent:", res))
+                    .catch(err => console.error("❌ Error sending location:", err));
                 };
 
-                navigator.geolocation.getCurrentPosition(sendLocation);
+                // 3. send first student scanned for general boarding point
+                if (firstScanLocation) {
+                    sendLocationToBackend(firstScanLocation.lat, firstScanLocation.lng);
+                } else {
+                    console.warn("⚠️ No boarding location available. Using current position as fallback.");
+                    // Fallback: if there is no firstScanLocation, ask for it
+                    navigator.geolocation.getCurrentPosition(pos => {
+                        sendLocationToBackend(pos.coords.latitude, pos.coords.longitude);
+                    });
+                }
+
+                // 4. set interval tracking every 30 seconds 
                 trackingInterval = setInterval(() => {
-                    navigator.geolocation.getCurrentPosition(sendLocation);
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                            (pos) => {
+                                sendLocationToBackend(pos.coords.latitude, pos.coords.longitude);
+                            },
+                            (err) => {
+                                console.warn("⚠️ Geolocation failed during tracking:", err);
+                            }
+                        );
+                    } else {
+                        console.error("❌ Geolocation not supported");
+                    }
                 }, 30000);
 
-            } catch(err){
+            } catch (err) {
                 alert("Error starting trip: " + err.message);
             }
         });

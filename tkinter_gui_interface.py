@@ -9,17 +9,17 @@ from datetime import datetime
 from dotenv import load_dotenv
 from folium.plugins import MarkerCluster
 
-# Admin user Tkinter
-admin_email = "admin@gmail.com"
-admin_password = "admin123"
-
-# Get passwords and secret stuff from .env
+# Please set your own variables on .env
 load_dotenv()
+# Admin user MySQL
 MYSQL_USER = os.getenv("MYSQL_USER")
 MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD")
 MYSQL_HOST = os.getenv("MYSQL_HOST")
 DB_PORT = os.getenv("MYSQL_PORT")
 MYSQL_DB_MYSHUDDLE = os.getenv("MYSQL_DB_MYSHUDDLE")
+# Admin user Tkinter
+admin_email = os.getenv("TKINTER_ADMIN_USER")    
+admin_password = os.getenv("TKINTER_ADMIN_PASS") 
 
 # Database connection
 def connect_db():
@@ -584,30 +584,45 @@ def view_trips(parent_window):
         m = folium.Map(location=coords[0], zoom_start=15)
         folium.PolyLine(coords, color="blue", weight=3).add_to(m)
 
-        # --- Marker when board ---
-        boarded_students = [st["name"] for st in data["students"] if st["boarded_time"]]
-        if boarded_students:
-            # create lists HTML
-            popup_html = "<b>Students on board:</b><br><ul style='margin:0; padding-left:15px;'>"
-            popup_html += "".join(f"<li>{name}</li>" for name in boarded_students)
-            popup_html += "</ul>"
+        # --- Marker when board (boarding = blue) ---
+        boarded_students = [st for st in data["students"] if st["boarded_time"]]
 
-            # look for first student to set the location
-            first_boarded = next(st for st in data["students"] if st["boarded_time"])
+        if boarded_students:
+            # Create HTML list 
+            names_list = "".join(f"<li>{st['name']}</li>" for st in boarded_students)
+            popup_html = f"""
+            <div style="font-family: Arial, sans-serif; font-size: 14px;">
+                <b>🚌 Boarding Students:</b><br>
+                <ul style="margin:5px 0 0 15px; padding:0;">
+                    {names_list}
+                </ul>
+            </div>
+            """
+            # Set location with first student QR on board
+            first = boarded_students[0]
             folium.Marker(
-                location=[first_boarded["boarded_lat"], first_boarded["boarded_lng"]],
+                location=[first["boarded_lat"], first["boarded_lng"]],
                 popup=folium.Popup(popup_html, max_width=250),
-                icon=folium.Icon(color="green", icon="school")
+                icon=folium.Icon(color="blue", icon="school")
             ).add_to(m)
 
-        # --- Markers drop off ---
+        # --- Markers drop off (drop-off = green) ---
         cluster = MarkerCluster().add_to(m)
         for st in data["students"]:
             if st["dropoff_time"]:
+                # Formato legible de hora (opcional)
+                dropoff_time = st.get("dropoff_time", "").replace("T", " ")[:19]
+                popup_html = f"""
+                <div style="font-family: Arial, sans-serif; font-size: 14px;">
+                    <b>🏠 Drop-off</b><br>
+                    <b>Student:</b> {st['name']}<br>
+                    <b>Time:</b> {dropoff_time}
+                </div>
+                """
                 folium.Marker(
-                    [st["dropoff_lat"], st["dropoff_lng"]],
-                    popup=f"Bajada: {st['name']}",
-                    icon=folium.Icon(color="red", icon="home")
+                    location=[st["dropoff_lat"], st["dropoff_lng"]],
+                    popup=folium.Popup(popup_html, max_width=250),
+                    icon=folium.Icon(color="green", icon="home")
                 ).add_to(cluster)
 
         map_file = "trip_map.html"

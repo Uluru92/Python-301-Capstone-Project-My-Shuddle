@@ -1,0 +1,68 @@
+{
+    "trip_id": 12,
+    "plate": "BUS123",
+    "school": "Escuela Victoriano Mena Mena",
+    "locations": [
+        {
+            "plate": "BUS123",
+            "lat": 9.9324234,
+            "lng": -84.0658885,
+            "timestamp": "2025-10-14T21:17:18"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9324234,
+            "lng": -84.0658885,
+            "timestamp": "2025-10-14T21:17:48"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9324234,
+            "lng": -84.0658885,
+            "timestamp": "2025-10-14T21:18:18"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9324234,
+            "lng": -84.0658885,
+            "timestamp": "2025-10-14T21:18:48"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9324234,
+            "lng": -84.0658885,
+            "timestamp": "2025-10-14T21:19:18"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9324234,
+            "lng": -84.0658885,
+            "timestamp": "2025-10-14T21:19:48"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9324234,
+            "lng": -84.0658885,
+            "timestamp": "2025-10-14T21:20:18"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9324224,
+            "lng": -84.0658718,
+            "timestamp": "2025-10-14T21:20:26"
+        }
+    ],
+    "students": [
+        {
+            "student_id": 8,
+            "name": "Mariana Eduarte Alvarado",
+            "status": "dropped_off",
+            "boarded_time": "2025-10-14T21:16:38",
+            "boarded_lat": 9.9324234,
+            "boarded_lng": -84.0658885,
+            "dropoff_time": "2025-10-14T21:20:24",
+            "dropoff_lat": 9.9324224,
+            "dropoff_lng": -84.0658718
+        }
+    ]
+}

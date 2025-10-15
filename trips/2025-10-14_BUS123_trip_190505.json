@@ -1,0 +1,79 @@
+{
+    "trip_id": 10,
+    "plate": "BUS123",
+    "school": "Escuela Victoriano Mena Mena",
+    "locations": [
+        {
+            "plate": "BUS123",
+            "lat": 9.9326179,
+            "lng": -84.0657969,
+            "timestamp": "2025-10-14T19:01:19"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9325906,
+            "lng": -84.0658738,
+            "timestamp": "2025-10-14T19:01:49"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9325906,
+            "lng": -84.0658738,
+            "timestamp": "2025-10-14T19:02:19"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9325906,
+            "lng": -84.0658738,
+            "timestamp": "2025-10-14T19:02:49"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9325906,
+            "lng": -84.0658738,
+            "timestamp": "2025-10-14T19:02:49"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9325906,
+            "lng": -84.0658738,
+            "timestamp": "2025-10-14T19:03:19"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9325906,
+            "lng": -84.0658738,
+            "timestamp": "2025-10-14T19:03:19"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9325906,
+            "lng": -84.0658738,
+            "timestamp": "2025-10-14T19:05:05"
+        }
+    ],
+    "students": [
+        {
+            "student_id": 5,
+            "name": "Ignacio Araya Solis",
+            "status": "dropped_off",
+            "boarded_time": "2025-10-14T19:00:44",
+            "boarded_lat": 9.9326179,
+            "boarded_lng": -84.0657969,
+            "dropoff_time": "2025-10-14T19:02:48",
+            "dropoff_lat": 9.9325906,
+            "dropoff_lng": -84.0658738
+        },
+        {
+            "student_id": 9,
+            "name": "Aaron Alvarado Araya",
+            "status": "dropped_off",
+            "boarded_time": "2025-10-14T19:01:00",
+            "boarded_lat": 9.9326179,
+            "boarded_lng": -84.0657969,
+            "dropoff_time": "2025-10-14T19:03:18",
+            "dropoff_lat": 9.9325906,
+            "dropoff_lng": -84.0658738
+        }
+    ]
+}

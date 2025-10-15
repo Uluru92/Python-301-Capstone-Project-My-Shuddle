@@ -1,0 +1,73 @@
+{
+    "trip_id": 14,
+    "plate": "BUS123",
+    "school": "Escuela Victoriano Mena Mena",
+    "locations": [
+        {
+            "plate": "BUS123",
+            "lat": 9.9325556,
+            "lng": -84.0660429,
+            "timestamp": "2025-10-14T21:38:20"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9325556,
+            "lng": -84.0660429,
+            "timestamp": "2025-10-14T21:39:09"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9325474,
+            "lng": -84.0659355,
+            "timestamp": "2025-10-14T21:39:39"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9325474,
+            "lng": -84.0659355,
+            "timestamp": "2025-10-14T21:40:09"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9325474,
+            "lng": -84.0659355,
+            "timestamp": "2025-10-14T21:40:39"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9325474,
+            "lng": -84.0659355,
+            "timestamp": "2025-10-14T21:40:39"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.9325474,
+            "lng": -84.0659355,
+            "timestamp": "2025-10-14T21:40:39"
+        }
+    ],
+    "students": [
+        {
+            "student_id": 2,
+            "name": "Josue Alvarado Araya",
+            "status": "dropped_off",
+            "boarded_time": "2025-10-14T21:38:20",
+            "boarded_lat": 9.9325556,
+            "boarded_lng": -84.0660429,
+            "dropoff_time": "2025-10-14T21:40:38",
+            "dropoff_lat": 9.9325474,
+            "dropoff_lng": -84.0659355
+        },
+        {
+            "student_id": 7,
+            "name": "Alonso Araya Solis",
+            "status": "dropped_off",
+            "boarded_time": "2025-10-14T21:38:35",
+            "boarded_lat": 9.9325556,
+            "boarded_lng": -84.0660429,
+            "dropoff_time": "2025-10-14T21:40:38",
+            "dropoff_lat": 9.9325474,
+            "dropoff_lng": -84.0659355
+        }
+    ]
+}
