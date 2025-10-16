@@ -1,0 +1,115 @@
+{
+    "trip_id": 43,
+    "plate": "BUS123",
+    "school": "Escuela Victoriano Mena Mena",
+    "locations": [
+        {
+            "plate": "BUS123",
+            "lat": 9.93373470004983,
+            "lng": -84.05903412946817,
+            "timestamp": "2025-10-15T18:42:34"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.93373470004983,
+            "lng": -84.05903412946817,
+            "timestamp": "2025-10-15T18:43:45"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.932256938356804,
+            "lng": -84.06017200219001,
+            "timestamp": "2025-10-15T18:44:03"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.932256938356804,
+            "lng": -84.06017200219001,
+            "timestamp": "2025-10-15T18:44:20"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.932256938356804,
+            "lng": -84.06017200219001,
+            "timestamp": "2025-10-15T18:44:50"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.932247608688005,
+            "lng": -84.05863493617792,
+            "timestamp": "2025-10-15T18:44:52"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.932244938787559,
+            "lng": -84.05863494640322,
+            "timestamp": "2025-10-15T18:45:22"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.932156170634157,
+            "lng": -84.05795064939957,
+            "timestamp": "2025-10-15T18:45:30"
+        },
+        {
+            "plate": "BUS123",
+            "lat": 9.931551285385833,
+            "lng": -84.0578679898063,
+            "timestamp": "2025-10-15T18:45:50"
+        }
+    ],
+    "students": [
+        {
+            "student_id": 1,
+            "name": "Jimena Alvarado Araya",
+            "status": "dropped_off",
+            "boarded_time": "2025-10-15T18:42:54",
+            "boarded_lat": 9.9337347,
+            "boarded_lng": -84.05903413,
+            "dropoff_time": "2025-10-15T18:44:51",
+            "dropoff_lat": 9.93224761,
+            "dropoff_lng": -84.05863494,
+            "home_lat": 9.93309152,
+            "home_lng": -84.06745619
+        },
+        {
+            "student_id": 2,
+            "name": "Josue Alvarado Araya",
+            "status": "dropped_off",
+            "boarded_time": "2025-10-15T18:43:09",
+            "boarded_lat": 9.9337347,
+            "boarded_lng": -84.05903413,
+            "dropoff_time": "2025-10-15T18:45:29",
+            "dropoff_lat": 9.93215617,
+            "dropoff_lng": -84.05795065,
+            "home_lat": 9.93513224,
+            "home_lng": -84.06543743
+        },
+        {
+            "student_id": 3,
+            "name": "Adrian Sequeira Araya",
+            "status": "dropped_off",
+            "boarded_time": "2025-10-15T18:43:23",
+            "boarded_lat": 9.9337347,
+            "boarded_lng": -84.05903413,
+            "dropoff_time": "2025-10-15T18:44:02",
+            "dropoff_lat": 9.93225694,
+            "dropoff_lng": -84.060172,
+            "home_lat": 9.93512686,
+            "home_lng": -84.06338239
+        },
+        {
+            "student_id": 4,
+            "name": "Sebastian Araya Solis",
+            "status": "dropped_off",
+            "boarded_time": "2025-10-15T18:42:34",
+            "boarded_lat": 9.9337347,
+            "boarded_lng": -84.05903413,
+            "dropoff_time": "2025-10-15T18:45:49",
+            "dropoff_lat": 9.93155129,
+            "dropoff_lng": -84.05786799,
+            "home_lat": 9.93450272,
+            "home_lng": -84.06450171
+        }
+    ]
+}

@@ -399,7 +399,6 @@ def register_student(parent_window):
             entry_home_lat.delete(0, END)
             entry_home_lng.delete(0, END)
 
-
         except mysql.connector.Error as err:
             messagebox.showerror("Database Error", str(err))
         finally:
