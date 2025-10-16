@@ -218,7 +218,7 @@ def parent_map():
 
     parent_email = session["parent_email"]
 
-    # Obtener todos los hijos del padre
+    # Get all child from parent
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     cursor.execute("""
@@ -235,22 +235,24 @@ def parent_map():
 
     parent_child_ids = [c["student_id"] for c in children]
 
-    # Inicializar mapa
+    # Start map
     default_coords = (10.05, -85.42)  # Hojancha
     m = folium.Map(location=default_coords, zoom_start=15)
     dropoff_cluster = MarkerCluster(name="Drop-offs").add_to(m)
 
-    # Traer último viaje de cualquier hijo
+    # Get current  trip from any child
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("""
+
+    cursor.execute(f"""
         SELECT t.trip_id
         FROM trips t
         JOIN trip_students ts ON t.trip_id = ts.trip_id
-        WHERE ts.student_id IN (%s)
-        ORDER BY t.trip_id DESC
+        WHERE ts.student_id IN ({",".join(["%s"] * len(parent_child_ids))})
+        AND t.trip_date >= CURDATE() - INTERVAL 1 DAY
+        ORDER BY t.start_time DESC
         LIMIT 1
-    """ % ",".join(["%s"]*len(parent_child_ids)), tuple(parent_child_ids))
+    """, tuple(parent_child_ids))
     trip = cursor.fetchone()
     cursor.close()
     conn.close()
@@ -261,7 +263,7 @@ def parent_map():
     trip_id = trip["trip_id"]
     students = get_students_by_trip(trip_id)
 
-    # Crear markers solo una vez por estudiante
+    # create one marker for every student
     board_marker_coords = None
     parent_boarded_coords = None
     all_boarded_students = []
@@ -310,11 +312,28 @@ def parent_map():
             icon=folium.Icon(color="blue", icon="school")
         ).add_to(m)
 
-    # Centrar mapa
+    # Map center
     if parent_boarded_coords:
         m.location = parent_boarded_coords
     elif board_marker_coords:
         m.location = board_marker_coords
+
+    # --- Draw route ---
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT lat, lng
+        FROM bus_locations
+        WHERE trip_id = %s
+        ORDER BY timestamp ASC
+    """, (trip_id,))
+    locations = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    if locations and len(locations) > 1:
+        path = [(float(l["lat"]), float(l["lng"])) for l in locations]
+        folium.PolyLine(path, color="blue", weight=5).add_to(m)
 
     return m._repr_html_()
 
@@ -613,20 +632,20 @@ def location():
 def show_map():
     """HTML map with the trip route and drop marks (using folium and app_state)"""
 
-    # --- 1️⃣ Preparar bus temporal si no hay current_bus pero hay pre-scanned students ---
+    # --- Prepare temporal current_bus if there are pre-scanned students ---
     if not app_state.current_bus and app_state.pre_scanned_students:
-        temp_bus = Bus("BUS123")  # placa temporal
+        temp_bus = Bus("BUS123")  # temporal plate
         for s in app_state.pre_scanned_students:
             temp_bus.board_student(s)
         bus = temp_bus
     else:
         bus = app_state.current_bus
 
-    # --- 2️⃣ Determinar centro del mapa ---
+    # --- map center ---
     if bus and bus.locations:
         center = (bus.locations[-1].lat, bus.locations[-1].lng)
     elif bus:
-        # Centrar en el primer estudiante con coordenadas
+        # center on first student scanned
         first_student_with_coords = next(
             (s for s in bus.students_onboard if s.boarded_lat is not None and s.boarded_lng is not None),
             None
@@ -645,7 +664,7 @@ def show_map():
         path = [(c.lat, c.lng) for c in app_state.current_bus.locations]
         folium.PolyLine(path, color="blue", weight=5).add_to(m)
 
-        # --- BOARDING MARKER ---
+        # --- Boarding Marker ---
         boarded_students = [s for s in app_state.current_bus.students_onboard if s.boarded_lat is not None]
         if boarded_students:
             # Create HTML list of names
@@ -684,14 +703,14 @@ def show_map():
                     icon=folium.Icon(color="green", icon="home")
                 ).add_to(dropoff_cluster)
 
-        # --- 3️⃣ MARKERS DE HOMES DE ESTUDIANTES ESCANEADOS (color celeste) ---
+        # --- Scanned Student Home markers ---
         home_cluster = MarkerCluster(name="Student Homes").add_to(m)
 
-        # 1️⃣ Obtener todos los IDs de estudiantes a bordo
+        # get all IDs on board
         student_ids = [s.student_id for s in bus.students_onboard]
 
         if student_ids:
-            # 2️⃣ Traer todas las coordenadas home de una sola vez
+            # get all homes coords
             format_strings = ",".join(["%s"] * len(student_ids))
             conn = get_db_connection()
             cursor = conn.cursor(dictionary=True)
@@ -704,10 +723,9 @@ def show_map():
             cursor.close()
             conn.close()
 
-            # Convertir a dict para acceso rápido
             homes_dict = {h["student_id"]: h for h in homes}
 
-            # 3️⃣ Dibujar markers solo si hay coordenadas
+            # Draw markers if coords
             for s in bus.students_onboard:
                 home = homes_dict.get(s.student_id)
                 if home and home["home_lat"] is not None and home["home_lng"] is not None:

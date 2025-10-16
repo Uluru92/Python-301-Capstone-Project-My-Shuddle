@@ -35,7 +35,7 @@
                 const response = await fetch("/get_boarded_students");
                 const studentsFromServer = await response.json();
 
-                // Combinar pre scanned students and those in the server
+                // get pre scanned students and those in the server
                 const allStudents = [...new Map(
                     [...scannedStudents, ...studentsFromServer].map(s => [s.student_id, s])
                 ).values()];
@@ -260,7 +260,7 @@
                     });
                 }
 
-                // 4. set interval tracking every 30 seconds 
+                // 4. set interval tracking every 10 seconds 
                 trackingInterval = setInterval(() => {
                     if (navigator.geolocation) {
                         navigator.geolocation.getCurrentPosition(
@@ -274,7 +274,7 @@
                     } else {
                         console.error("❌ Geolocation not supported");
                     }
-                }, 30000);
+                }, 10000);
 
             } catch (err) {
                 alert("Error starting trip: " + err.message);
@@ -302,9 +302,6 @@
                 document.getElementById("startBtn").disabled = true;
                 document.getElementById("stopBtn").disabled = true;
                 document.getElementById("scanQRBtn").disabled = false;
-
-                // Optional: notify backend to clear session data if needed
-                // await fetch(`${NGROK_URL}/reset_trip`, { method: "POST" });
 
                 console.log("✅ System reset and ready for a new trip");
 
