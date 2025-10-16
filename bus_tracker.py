@@ -6,7 +6,10 @@ from dotenv import load_dotenv
 from mysql.connector import Error
 from pathlib import Path
 from folium.plugins import MarkerCluster
-from models import Bus, Student, BusTracker, BusLocation # import models OOP
+
+
+# importar modelos OOP
+from models import Bus, Student, BusTracker, BusLocation
 
 # -------------------- Config --------------------
 load_dotenv()
@@ -17,19 +20,40 @@ MYSQL_HOST = os.getenv("MYSQL_HOST")
 MYSQL_PORT = os.getenv("MYSQL_PORT")
 MYSQL_DB_MYSHUDDLE = os.getenv("MYSQL_DB_MYSHUDDLE")
 
+
 # -------------------- App state --------------------
 class AppState:
     def __init__(self):
         self.bus_tracker = BusTracker()   # history plate
         self.current_bus = None           # Bus object cuando hay viaje 
-        self.pre_scanned_students = []    # list of Student objects before start_trip
+        self.pre_scanned_students = []    # lista de Student objects antes de start_trip
         self.current_trip_id = None
         self.trip_in_progress = False
         self.current_trip_file = None
 
-app_state = AppState() # create app_state object
+app_state = AppState()
 
 # -------------------- Helpers --------------------
+def load_trip_json(trip_id):
+    """get JSON from trip id and returns locations"""
+    trips_dir = Path("trips")
+
+    for file_path in trips_dir.glob("*.json"):
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            if data.get("trip_id") == trip_id:
+                return data.get("locations", [])
+    return []
+
+def log_to_file(func):
+    def wrapper(*args, **kwargs):
+        result = func(*args, **kwargs)
+        with open("function_log.txt", "a", encoding="utf-8") as f:
+            f.write(f"{datetime.now()} - Called {func.__name__}({args}, {kwargs}) → {result}\n")
+        return result
+    return wrapper
+
+@log_to_file
 def get_db_connection():
     try:
         return mysql.connector.connect(
@@ -42,7 +66,8 @@ def get_db_connection():
     except Error as e:
         print("Error al conectar a la base de datos:", e)
         return None
-    
+
+@log_to_file   
 def start_new_trip(plate="BUS123"):
     """Configura el archivo JSON y memoria para el viaje actual (usa app_state)"""
     app_state.current_bus = app_state.current_bus or Bus(plate)
@@ -76,6 +101,7 @@ def get_school_name_by_trip(trip):
         conn.close()
 
 # --- Get students in trip ---
+@log_to_file
 def get_students_by_trip(trip):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
@@ -114,6 +140,7 @@ def get_students_by_trip(trip):
         conn.close()
 
 # --- Get locations ---
+@log_to_file
 def get_locations_serializable(bus):
     locations_serializable = []
     if app_state.current_bus and app_state.current_bus.locations:
@@ -121,6 +148,7 @@ def get_locations_serializable(bus):
     return locations_serializable
 
 # --- trip data created ---
+@log_to_file
 def build_trip_data(trip_id, bus, school_name, students_serializable, locations_serializable):
     return {
         "trip_id": trip_id,
@@ -131,6 +159,7 @@ def build_trip_data(trip_id, bus, school_name, students_serializable, locations_
     }
 
 # --- Get locations ---
+@log_to_file
 def save_filename_trip_json(trip_data, dir_path="trips"):
     trips_dir = Path(dir_path)
     trips_dir.mkdir(exist_ok=True)
@@ -145,6 +174,7 @@ def save_filename_trip_json(trip_data, dir_path="trips"):
     return filename
 
 # --- Save trip ---
+@log_to_file
 def save_current_trip():
     """ Save current trip in a json file, using date and timestamps"""
     if not app_state.current_trip_id:
@@ -177,10 +207,9 @@ def to_cr_time_str(ts_str):
     cr_dt = utc_dt - timedelta(hours=6)
     # formato ISO sin Z
     return cr_dt.strftime("%Y-%m-%dT%H:%M:%S")
-
 # -------------------- Flask App --------------------
 app = Flask(__name__)
-CORS(app)  # enable CORS 
+CORS(app)  # habilita CORS para que el navegador pueda enviar POST
 
 print("🌍 Usando URL pública de ngrok:", NGROK_URL)
 
@@ -247,7 +276,7 @@ def parent_map():
         JOIN trip_students ts ON t.trip_id = ts.trip_id
         WHERE ts.student_id IN ({",".join(["%s"] * len(parent_child_ids))})
         AND t.trip_date >= CURDATE() - INTERVAL 1 DAY
-        ORDER BY t.start_time DESC
+        ORDER BY t.trip_date DESC, t.departure_time DESC
         LIMIT 1
     """, tuple(parent_child_ids))
     trip = cursor.fetchone()
@@ -292,7 +321,7 @@ def parent_map():
                 icon=folium.Icon(color=color, icon="home", prefix="fa")
             ).add_to(dropoff_cluster)
 
-    # Marker global azul
+    # Global Marker blue
     if all_boarded_students and board_marker_coords:
         names_list = "".join(f"<li>{s['name']}</li>" for s in all_boarded_students)
         popup_html = f"""
@@ -316,49 +345,39 @@ def parent_map():
         m.location = board_marker_coords
 
     # --- Draw route ---
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("""
-        SELECT lat, lng
-        FROM bus_locations
-        WHERE trip_id = %s
-        ORDER BY timestamp ASC
-    """, (trip_id,))
-    locations = cursor.fetchall()
-    cursor.close()
-    conn.close()
+    locations = load_trip_json(trip_id)
 
     if locations and len(locations) > 1:
         path = [(float(l["lat"]), float(l["lng"])) for l in locations]
         folium.PolyLine(path, color="blue", weight=5).add_to(m)
 
-        # --- last location registered marker ---
+        # --- Get students on board at this last location ---
+        onboard_students = [s for s in students if not s.get("dropoff_lat")]
+
+        # --- Marker last location ---
         last_loc = locations[-1]
 
-        # Students with no drop off registered yet
-        onboard_students = [
-            s for s in students
-            if not s.get("dropoff_lat") and not s.get("dropoff_lng")
-        ]
+        names_list = ""
+        for s in onboard_students:
+            if s["student_id"] in parent_child_ids:
+                display_name = s["name"]
+            else:
+                display_name = f"Student #{s['student_id']}"
+            names_list += f"<li>{display_name}</li>"
 
-        if onboard_students:
-            names_list = "".join(
-                f"<li>{s['name'] if s['student_id'] in parent_child_ids else f'Student #{s['student_id']}'}</li>"
-                for s in onboard_students
-            )
-            popup_html = f"""
-            <div style="font-family: Arial, sans-serif; font-size: 14px;">
-                <b>🚌 Students on board ({len(onboard_students)}):</b><br>
-                <ul style="margin:5px 0 0 15px; padding:0;">
-                    {names_list}
-                </ul>
-            </div>
-            """
-            folium.Marker(
-                location=(float(last_loc["lat"]), float(last_loc["lng"])),
-                popup=folium.Popup(popup_html, max_width=250),
-                icon=folium.Icon(color="orange", icon="bus", prefix="fa")
-            ).add_to(m)
+        popup_html = f"""
+        <div style="font-family: Arial, sans-serif; font-size: 14px;">
+            <b>🚌 Students on board:</b><br>
+            <ul style="margin:5px 0 0 15px; padding:0;">
+                {names_list or '<li><i>No students on board</i></li>'}
+            </ul>
+        </div>
+        """
+        folium.Marker(
+            location=(float(last_loc["lat"]), float(last_loc["lng"])),
+            popup=folium.Popup(popup_html, max_width=250),
+            icon=folium.Icon(color="orange", icon="bus", prefix="fa")
+        ).add_to(m)
 
     # Map center
     if parent_boarded_coords:

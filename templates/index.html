@@ -4,16 +4,151 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MyShuddle Tracker</title>
+    <style>
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            background: linear-gradient(135deg, #f0f4f7, #e6eef3);
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            color: #1d3557;
+            margin-top: 25px;
+            font-size: 28px;
+            letter-spacing: 0.5px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 25px auto;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            padding: 25px;
+        }
+
+        .buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 12px 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.2s ease-in-out;
+        }
+
+        #scanQRBtn {
+            background-color: #1d3557;
+            color: white;
+        }
+        #scanQRBtn:hover {
+            background-color: #27496d;
+        }
+
+        #startBtn {
+            background-color: #2a9d8f;
+            color: white;
+        }
+        #startBtn:hover {
+            background-color: #21867a;
+        }
+
+        #stopBtn {
+            background-color: #e63946;
+            color: white;
+        }
+        #stopBtn:hover {
+            background-color: #d62839;
+        }
+
+        #stopBtn:disabled,
+        #startBtn:disabled,
+        #scanQRBtn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        h2 {
+            color: #264653;
+            font-size: 20px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        #studentsList {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #studentsList div {
+            display: flex;
+            justify-content: center;
+        }
+
+        #studentsList button {
+            width: 90%;
+            background-color: #f1faee;
+            color: #1d3557;
+            border: 1px solid #a8dadc;
+            padding: 10px;
+        }
+
+        #studentsList button:hover {
+            background-color: #a8dadc;
+        }
+
+        footer {
+            text-align: center;
+            font-size: 13px;
+            color: #999;
+            margin-top: 25px;
+            padding-bottom: 10px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                margin: 15px;
+                padding: 20px;
+            }
+            button {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
+
 <body>
-    <h1>MyShuddle Tracker</h1>
+    <h1>🚌 MyShuddle Tracker</h1>
 
-    <button id="scanQRBtn">Scan Students QR</button>
-    <button id="startBtn" disabled>Start Trip</button>
-    <button id="stopBtn" disabled>Stop Trip</button>
+    <div class="container">
+        <div class="buttons">
+            <button id="scanQRBtn">📷 Scan Students QR</button>
+            <button id="startBtn" disabled>▶️ Start Trip</button>
+            <button id="stopBtn" disabled>⏹ Stop Trip</button>
+        </div>
 
-    <h2>Students on board</h2>
-    <div id="studentsList"></div>
+        <h2>Students on Board</h2>
+        <div id="studentsList">
+            <p style="text-align:center;">No students on board</p>
+        </div>
+    </div>
+
+    <footer>
+        MyShuddle &copy; 2025 — Powered by Uluru
+    </footer>
+
 
     <script>
         const NGROK_URL = "{{ ngrok_url }}";
