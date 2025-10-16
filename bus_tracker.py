@@ -6,10 +6,7 @@ from dotenv import load_dotenv
 from mysql.connector import Error
 from pathlib import Path
 from folium.plugins import MarkerCluster
-
-
-# importar modelos OOP
-from models import Bus, Student, BusTracker, BusLocation
+from models import Bus, Student, BusTracker, BusLocation # import models OOP
 
 # -------------------- Config --------------------
 load_dotenv()
@@ -20,18 +17,17 @@ MYSQL_HOST = os.getenv("MYSQL_HOST")
 MYSQL_PORT = os.getenv("MYSQL_PORT")
 MYSQL_DB_MYSHUDDLE = os.getenv("MYSQL_DB_MYSHUDDLE")
 
-
 # -------------------- App state --------------------
 class AppState:
     def __init__(self):
         self.bus_tracker = BusTracker()   # history plate
         self.current_bus = None           # Bus object cuando hay viaje 
-        self.pre_scanned_students = []    # lista de Student objects antes de start_trip
+        self.pre_scanned_students = []    # list of Student objects before start_trip
         self.current_trip_id = None
         self.trip_in_progress = False
         self.current_trip_file = None
 
-app_state = AppState()
+app_state = AppState() # create app_state object
 
 # -------------------- Helpers --------------------
 def get_db_connection():
@@ -181,9 +177,10 @@ def to_cr_time_str(ts_str):
     cr_dt = utc_dt - timedelta(hours=6)
     # formato ISO sin Z
     return cr_dt.strftime("%Y-%m-%dT%H:%M:%S")
+
 # -------------------- Flask App --------------------
 app = Flask(__name__)
-CORS(app)  # habilita CORS para que el navegador pueda enviar POST
+CORS(app)  # enable CORS 
 
 print("🌍 Usando URL pública de ngrok:", NGROK_URL)
 
