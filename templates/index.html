@@ -181,14 +181,14 @@
                         });
                         const data = await res.json();
                         if (data.status === "ok") {
-                            alert(`${studentData.name} registrado en la buseta.`);
+                            alert(`${studentData.name} Registered on board.`);
                             scannedStudents.push({ student_id: studentData.student_id, name: studentData.name });
                             loadStudents();
                         } else {
                             alert(data.message);
                         }
                     } catch (err) {
-                        alert("Error al registrar estudiante: " + err.message);
+                        alert("Register error: " + err.message);
                     } finally {
                         btn.disabled = false;
                     }
@@ -196,7 +196,7 @@
 
                 if (!firstScanLocation) {
                     if (!navigator.geolocation) {
-                        alert("Geolocalización no soportada en este dispositivo.");
+                        alert("Geolocalization not supported on this device.");
                         btn.disabled = false;
                         return;
                     }
@@ -207,14 +207,14 @@
                         };
                         await sendBoardRequest(firstScanLocation.lat, firstScanLocation.lng);
                     }, (err) => {
-                        alert("Error al obtener ubicación: " + err.message);
+                        alert("Error getting location: " + err.message);
                         btn.disabled = false;
                     });
                 } else {
                     await sendBoardRequest(firstScanLocation.lat, firstScanLocation.lng);
                 }
             } catch (err) {
-                alert("Error al registrar estudiante: " + err.message);
+                alert("Register student error: " + err.message);
                 btn.disabled = false;
             }
         });

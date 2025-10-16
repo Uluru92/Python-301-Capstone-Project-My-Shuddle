@@ -335,6 +335,40 @@ def parent_map():
         path = [(float(l["lat"]), float(l["lng"])) for l in locations]
         folium.PolyLine(path, color="blue", weight=5).add_to(m)
 
+        # --- last location registered marker ---
+        last_loc = locations[-1]
+
+        # Students with no drop off registered yet
+        onboard_students = [
+            s for s in students
+            if not s.get("dropoff_lat") and not s.get("dropoff_lng")
+        ]
+
+        if onboard_students:
+            names_list = "".join(
+                f"<li>{s['name'] if s['student_id'] in parent_child_ids else f'Student #{s['student_id']}'}</li>"
+                for s in onboard_students
+            )
+            popup_html = f"""
+            <div style="font-family: Arial, sans-serif; font-size: 14px;">
+                <b>🚌 Students on board ({len(onboard_students)}):</b><br>
+                <ul style="margin:5px 0 0 15px; padding:0;">
+                    {names_list}
+                </ul>
+            </div>
+            """
+            folium.Marker(
+                location=(float(last_loc["lat"]), float(last_loc["lng"])),
+                popup=folium.Popup(popup_html, max_width=250),
+                icon=folium.Icon(color="orange", icon="bus", prefix="fa")
+            ).add_to(m)
+
+    # Map center
+    if parent_boarded_coords:
+        m.location = parent_boarded_coords
+    elif board_marker_coords:
+        m.location = board_marker_coords
+
     return m._repr_html_()
 
 @app.route("/")
