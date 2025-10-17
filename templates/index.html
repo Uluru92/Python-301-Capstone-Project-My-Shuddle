@@ -53,7 +53,7 @@
             color: white;
         }
         #scanQRBtn:hover {
-            background-color: #27496d;
+            background-color: #2e5681;
         }
 
         #startBtn {
@@ -134,7 +134,7 @@
 
     <div class="container">
         <div class="buttons">
-            <button id="scanQRBtn">📷 Scan Students QR</button>
+            <button id="scanQRBtn">📷 Scan Student QR - copy info and press here</button>
             <button id="startBtn" disabled>▶️ Start Trip</button>
             <button id="stopBtn" disabled>⏹ Stop Trip</button>
         </div>
@@ -409,7 +409,7 @@
                     } else {
                         console.error("❌ Geolocation not supported");
                     }
-                }, 10000);
+                }, 15000);
 
             } catch (err) {
                 alert("Error starting trip: " + err.message);
