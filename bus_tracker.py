@@ -286,7 +286,6 @@ def parent_map():
     if not trip:
         return "<h3>No trips found for your children.</h3>", 404
 
-    trip_id, trip_status, bus_plate = trip
     trip_id = trip["trip_id"]
     students = get_students_by_trip(trip_id)
 
