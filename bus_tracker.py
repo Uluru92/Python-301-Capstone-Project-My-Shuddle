@@ -361,7 +361,7 @@ def parent_map():
         print(f"Usando ubicaciones del JSON: {len(locations)} puntos")
 
     if locations and len(locations) > 1:
-        path = [(float(l["lat"]), float(l["lng"])) for l in locations]
+        path = [(float(l.lat), float(l.lng)) for l in locations]
         folium.PolyLine(path, color="blue", weight=5).add_to(m)
 
         # --- Get students on board at this last location ---
@@ -369,6 +369,10 @@ def parent_map():
 
         # --- Marker last location ---
         last_loc = locations[-1]
+
+        # handle both dicts and BusLocation objects
+        lat = float(last_loc.lat) if hasattr(last_loc, "lat") else float(last_loc["lat"])
+        lng = float(last_loc.lng) if hasattr(last_loc, "lng") else float(last_loc["lng"])
 
         names_list = ""
         for s in onboard_students:
@@ -387,7 +391,7 @@ def parent_map():
         </div>
         """
         folium.Marker(
-            location=(float(last_loc["lat"]), float(last_loc["lng"])),
+            location=(lat, lng),
             popup=folium.Popup(popup_html, max_width=250),
             icon=folium.Icon(color="orange", icon="bus", prefix="fa")
         ).add_to(m)
